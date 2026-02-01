@@ -11,7 +11,7 @@ import type { GridFeature } from "./components/FeaturesGrid";
 
 export const features: GridFeature[] = [
   {
-    name: "Cool Feature 1",
+    name: "The best feature",
     description: "Your feature",
     emoji: "🤝",
     href: DocsUrl,
