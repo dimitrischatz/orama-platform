@@ -1,8 +1,6 @@
-import { useAuth } from "wasp/client/auth";
 import { Link as WaspRouterLink, routes } from "wasp/client/router";
 
 export function NotFoundPage() {
-  const { data: user } = useAuth();
 
   return (
     <div className="flex min-h-screen items-center justify-center">
@@ -12,7 +10,7 @@ export function NotFoundPage() {
           Oops! The page you're looking for doesn't exist.
         </p>
         <WaspRouterLink
-          to={user ? routes.DemoAppRoute.to : routes.LandingPageRoute.to}
+          to={routes.LandingPageRoute.to}
           className="text-accent-foreground bg-accent hover:bg-accent/90 inline-block rounded-lg px-8 py-3 font-semibold transition duration-300"
         >
           Go Back Home

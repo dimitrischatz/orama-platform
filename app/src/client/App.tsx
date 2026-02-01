@@ -9,17 +9,23 @@ import {
   marketingNavigationItems,
 } from "./components/NavBar/constants";
 import CookieConsentBanner from "./components/cookie-consent/Banner";
+import { DashboardLayout } from "../platform/layout/DashboardLayout";
 
-/**
- * use this component to wrap all child components
- * this is useful for templates, themes, and context
- */
 export default function App() {
   const location = useLocation();
+
   const isMarketingPage = useMemo(() => {
     return (
       location.pathname === "/" || location.pathname.startsWith("/pricing")
     );
+  }, [location]);
+
+  const isDashboard = useMemo(() => {
+    return location.pathname.startsWith("/dashboard");
+  }, [location]);
+
+  const isAdminDashboard = useMemo(() => {
+    return location.pathname.startsWith("/admin");
   }, [location]);
 
   const navigationItems = isMarketingPage
@@ -31,10 +37,6 @@ export default function App() {
       location.pathname !== routes.LoginRoute.build() &&
       location.pathname !== routes.SignupRoute.build()
     );
-  }, [location]);
-
-  const isAdminDashboard = useMemo(() => {
-    return location.pathname.startsWith("/admin");
   }, [location]);
 
   useEffect(() => {
@@ -50,7 +52,9 @@ export default function App() {
   return (
     <>
       <div className="bg-background text-foreground min-h-screen">
-        {isAdminDashboard ? (
+        {isDashboard ? (
+          <DashboardLayout />
+        ) : isAdminDashboard ? (
           <Outlet />
         ) : (
           <>

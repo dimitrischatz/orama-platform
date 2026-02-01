@@ -1,0 +1,382 @@
+import crypto from "crypto";
+import type { Project, Prompt, DocSource, ApiKey } from "wasp/entities";
+import { HttpError } from "wasp/server";
+import type {
+  GetProjects,
+  GetProjectById,
+  GetApiKeys,
+  CreateProject,
+  UpdateProject,
+  DeleteProject,
+  AddDocSource,
+  RemoveDocSource,
+  CreatePrompt,
+  UpdatePrompt,
+  DeletePrompt,
+  GenerateApiKey,
+  RevokeApiKey,
+} from "wasp/server/operations";
+import * as z from "zod";
+import { ensureArgsSchemaOrThrowHttpError } from "../server/validation";
+
+// ─── Queries ────────────────────────────────────────────────────────────────
+
+export const getProjects: GetProjects<void, Project[]> = async (
+  _args,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+  return context.entities.Project.findMany({
+    where: { userId: context.user.id },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+const getProjectByIdSchema = z.object({
+  id: z.string(),
+});
+
+type GetProjectByIdInput = z.infer<typeof getProjectByIdSchema>;
+
+type ProjectWithRelations = Project & {
+  prompts: Prompt[];
+  docSources: DocSource[];
+};
+
+export const getProjectById: GetProjectById<
+  GetProjectByIdInput,
+  ProjectWithRelations
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { id } = ensureArgsSchemaOrThrowHttpError(getProjectByIdSchema, rawArgs);
+
+  const project = await context.entities.Project.findUnique({
+    where: { id, userId: context.user.id },
+    include: { prompts: true, docSources: true },
+  });
+
+  if (!project) {
+    throw new HttpError(404, "Project not found");
+  }
+
+  return project;
+};
+
+export const getApiKeys: GetApiKeys<void, ApiKey[]> = async (
+  _args,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+  return context.entities.ApiKey.findMany({
+    where: { userId: context.user.id },
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+// ─── Project Actions ────────────────────────────────────────────────────────
+
+const createProjectSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+});
+
+type CreateProjectInput = z.infer<typeof createProjectSchema>;
+
+export const createProject: CreateProject<CreateProjectInput, Project> = async (
+  rawArgs,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { name, description } = ensureArgsSchemaOrThrowHttpError(
+    createProjectSchema,
+    rawArgs,
+  );
+
+  return context.entities.Project.create({
+    data: {
+      name,
+      description,
+      user: { connect: { id: context.user.id } },
+    },
+  });
+};
+
+const updateProjectSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+});
+
+type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+
+export const updateProject: UpdateProject<UpdateProjectInput, Project> = async (
+  rawArgs,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { id, ...data } = ensureArgsSchemaOrThrowHttpError(
+    updateProjectSchema,
+    rawArgs,
+  );
+
+  return context.entities.Project.update({
+    where: { id, userId: context.user.id },
+    data,
+  });
+};
+
+const deleteProjectSchema = z.object({
+  id: z.string(),
+});
+
+type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;
+
+export const deleteProject: DeleteProject<DeleteProjectInput, Project> = async (
+  rawArgs,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { id } = ensureArgsSchemaOrThrowHttpError(deleteProjectSchema, rawArgs);
+
+  return context.entities.Project.delete({
+    where: { id, userId: context.user.id },
+  });
+};
+
+// ─── DocSource Actions ──────────────────────────────────────────────────────
+
+const addDocSourceSchema = z.object({
+  projectId: z.string(),
+  url: z.string().url(),
+  label: z.string().optional(),
+  type: z.string().default("docs"),
+});
+
+type AddDocSourceInput = z.infer<typeof addDocSourceSchema>;
+
+export const addDocSource: AddDocSource<AddDocSourceInput, DocSource> = async (
+  rawArgs,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { projectId, url, label, type } = ensureArgsSchemaOrThrowHttpError(
+    addDocSourceSchema,
+    rawArgs,
+  );
+
+  return context.entities.DocSource.create({
+    data: {
+      url,
+      label,
+      type,
+      project: { connect: { id: projectId } },
+    },
+  });
+};
+
+const removeDocSourceSchema = z.object({
+  id: z.string(),
+});
+
+type RemoveDocSourceInput = z.infer<typeof removeDocSourceSchema>;
+
+export const removeDocSource: RemoveDocSource<
+  RemoveDocSourceInput,
+  DocSource
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { id } = ensureArgsSchemaOrThrowHttpError(
+    removeDocSourceSchema,
+    rawArgs,
+  );
+
+  // Ensure the doc source belongs to a project owned by this user
+  const docSource = await context.entities.DocSource.findFirst({
+    where: { id, project: { userId: context.user.id } },
+  });
+
+  if (!docSource) {
+    throw new HttpError(404, "Doc source not found");
+  }
+
+  return context.entities.DocSource.delete({ where: { id } });
+};
+
+// ─── Prompt Actions ─────────────────────────────────────────────────────────
+
+const createPromptSchema = z.object({
+  projectId: z.string(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  content: z.string(),
+  type: z.enum(["base", "skill"]),
+});
+
+type CreatePromptInput = z.infer<typeof createPromptSchema>;
+
+export const createPrompt: CreatePrompt<CreatePromptInput, Prompt> = async (
+  rawArgs,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { projectId, name, description, content, type } =
+    ensureArgsSchemaOrThrowHttpError(createPromptSchema, rawArgs);
+
+  // If type is "base", ensure there isn't already a base prompt
+  if (type === "base") {
+    const existing = await context.entities.Prompt.findFirst({
+      where: { projectId, type: "base" },
+    });
+    if (existing) {
+      throw new HttpError(400, "Project already has a base prompt. Update it instead.");
+    }
+  }
+
+  return context.entities.Prompt.create({
+    data: {
+      name,
+      description,
+      content,
+      type,
+      project: { connect: { id: projectId } },
+    },
+  });
+};
+
+const updatePromptSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  content: z.string().optional(),
+});
+
+type UpdatePromptInput = z.infer<typeof updatePromptSchema>;
+
+export const updatePrompt: UpdatePrompt<UpdatePromptInput, Prompt> = async (
+  rawArgs,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { id, ...data } = ensureArgsSchemaOrThrowHttpError(
+    updatePromptSchema,
+    rawArgs,
+  );
+
+  const prompt = await context.entities.Prompt.findFirst({
+    where: { id, project: { userId: context.user.id } },
+  });
+
+  if (!prompt) {
+    throw new HttpError(404, "Prompt not found");
+  }
+
+  return context.entities.Prompt.update({ where: { id }, data });
+};
+
+const deletePromptSchema = z.object({
+  id: z.string(),
+});
+
+type DeletePromptInput = z.infer<typeof deletePromptSchema>;
+
+export const deletePrompt: DeletePrompt<DeletePromptInput, Prompt> = async (
+  rawArgs,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { id } = ensureArgsSchemaOrThrowHttpError(deletePromptSchema, rawArgs);
+
+  const prompt = await context.entities.Prompt.findFirst({
+    where: { id, project: { userId: context.user.id } },
+  });
+
+  if (!prompt) {
+    throw new HttpError(404, "Prompt not found");
+  }
+
+  return context.entities.Prompt.delete({ where: { id } });
+};
+
+// ─── API Key Actions ────────────────────────────────────────────────────────
+
+const generateApiKeySchema = z.object({
+  name: z.string().min(1),
+});
+
+type GenerateApiKeyInput = z.infer<typeof generateApiKeySchema>;
+
+export const generateApiKey: GenerateApiKey<
+  GenerateApiKeyInput,
+  ApiKey
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { name } = ensureArgsSchemaOrThrowHttpError(
+    generateApiKeySchema,
+    rawArgs,
+  );
+
+  const key = `orama_${crypto.randomBytes(32).toString("hex")}`;
+
+  return context.entities.ApiKey.create({
+    data: {
+      key,
+      name,
+      user: { connect: { id: context.user.id } },
+    },
+  });
+};
+
+const revokeApiKeySchema = z.object({
+  id: z.string(),
+});
+
+type RevokeApiKeyInput = z.infer<typeof revokeApiKeySchema>;
+
+export const revokeApiKey: RevokeApiKey<RevokeApiKeyInput, ApiKey> = async (
+  rawArgs,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { id } = ensureArgsSchemaOrThrowHttpError(revokeApiKeySchema, rawArgs);
+
+  return context.entities.ApiKey.delete({
+    where: { id, userId: context.user.id },
+  });
+};

@@ -38,8 +38,8 @@ app OpenSaaS {
       //   (RequestPasswordReset(Route|Page), PasswordReset(Route|Page), EmailVerification(Route|Page))
       email: {
         fromField: {
-          name: "Open SaaS App",
-          email: "me@example.com"
+          name: "Orama",
+          email: "dimitris@orama.dev"
         },
         emailVerification: {
           clientRoute: EmailVerificationRoute,
@@ -68,7 +68,7 @@ app OpenSaaS {
       // }
     },
     onAuthFailedRedirectTo: "/login",
-    onAuthSucceededRedirectTo: "/demo-app",
+    onAuthSucceededRedirectTo: "/dashboard",
   },
 
   db: {
@@ -89,7 +89,7 @@ app OpenSaaS {
     //   Once you are ready for production, switch to e.g. "SendGrid" or "Mailgun" providers. Check out https://docs.opensaas.sh/guides/email-sending/ .
     provider: SendGrid,
     defaultFrom: {
-      name: "Dimitris from Orama",
+      name: "Orama",
       // When using a real provider, e.g. SendGrid, you must use the same email address that you configured your account to send out emails with!
       email: "dimitris@orama.dev"
     },
@@ -143,44 +143,6 @@ query getPaginatedUsers {
 action updateIsUserAdminById {
   fn: import { updateIsUserAdminById } from "@src/user/operations",
   entities: [User]
-}
-//#endregion
-
-//#region Demo AI App
-route DemoAppRoute { path: "/demo-app", to: DemoAppPage }
-page DemoAppPage {
-  authRequired: true,
-  component: import DemoAppPage from "@src/demo-ai-app/DemoAppPage"
-}
-
-action generateGptResponse {
-  fn: import { generateGptResponse } from "@src/demo-ai-app/operations",
-  entities: [User, Task, GptResponse]
-}
-
-action createTask {
-  fn: import { createTask } from "@src/demo-ai-app/operations",
-  entities: [Task]
-}
-
-action deleteTask {
-  fn: import { deleteTask } from "@src/demo-ai-app/operations",
-  entities: [Task]
-}
-
-action updateTask {
-  fn: import { updateTask } from "@src/demo-ai-app/operations",
-  entities: [Task]
-}
-
-query getGptResponses {
-  fn: import { getGptResponses } from "@src/demo-ai-app/operations",
-  entities: [User, GptResponse]
-}
-
-query getAllTasksByUser {
-  fn: import { getAllTasksByUser } from "@src/demo-ai-app/operations",
-  entities: [Task]
 }
 //#endregion
 
@@ -312,5 +274,101 @@ route AdminMessagesRoute { path: "/admin/messages", to: AdminMessagesPage }
 page AdminMessagesPage {
   authRequired: true,
   component: import AdminMessages from "@src/admin/dashboards/messages/MessagesPage"
+}
+//#endregion
+
+//#region Platform Dashboard
+route DashboardRoute { path: "/dashboard", to: DashboardPage }
+page DashboardPage {
+  authRequired: true,
+  component: import DashboardPage from "@src/platform/DashboardPage"
+}
+
+route NewProjectRoute { path: "/dashboard/projects/new", to: NewProjectPage }
+page NewProjectPage {
+  authRequired: true,
+  component: import NewProjectPage from "@src/platform/NewProjectPage"
+}
+
+route ProjectDetailRoute { path: "/dashboard/projects/:id", to: ProjectDetailPage }
+page ProjectDetailPage {
+  authRequired: true,
+  component: import ProjectDetailPage from "@src/platform/ProjectDetailPage"
+}
+
+route ApiKeysRoute { path: "/dashboard/keys", to: ApiKeysPage }
+page ApiKeysPage {
+  authRequired: true,
+  component: import ApiKeysPage from "@src/platform/ApiKeysPage"
+}
+
+// Queries
+query getProjects {
+  fn: import { getProjects } from "@src/platform/operations",
+  entities: [Project]
+}
+
+query getProjectById {
+  fn: import { getProjectById } from "@src/platform/operations",
+  entities: [Project, Prompt, DocSource]
+}
+
+query getApiKeys {
+  fn: import { getApiKeys } from "@src/platform/operations",
+  entities: [ApiKey]
+}
+
+// Project actions
+action createProject {
+  fn: import { createProject } from "@src/platform/operations",
+  entities: [Project]
+}
+
+action updateProject {
+  fn: import { updateProject } from "@src/platform/operations",
+  entities: [Project]
+}
+
+action deleteProject {
+  fn: import { deleteProject } from "@src/platform/operations",
+  entities: [Project]
+}
+
+// DocSource actions
+action addDocSource {
+  fn: import { addDocSource } from "@src/platform/operations",
+  entities: [DocSource]
+}
+
+action removeDocSource {
+  fn: import { removeDocSource } from "@src/platform/operations",
+  entities: [DocSource]
+}
+
+// Prompt actions
+action createPrompt {
+  fn: import { createPrompt } from "@src/platform/operations",
+  entities: [Prompt]
+}
+
+action updatePrompt {
+  fn: import { updatePrompt } from "@src/platform/operations",
+  entities: [Prompt]
+}
+
+action deletePrompt {
+  fn: import { deletePrompt } from "@src/platform/operations",
+  entities: [Prompt]
+}
+
+// API Key actions
+action generateApiKey {
+  fn: import { generateApiKey } from "@src/platform/operations",
+  entities: [ApiKey]
+}
+
+action revokeApiKey {
+  fn: import { revokeApiKey } from "@src/platform/operations",
+  entities: [ApiKey]
 }
 //#endregion

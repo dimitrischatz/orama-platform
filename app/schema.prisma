@@ -26,6 +26,8 @@ model User {
   contactFormMessages       ContactFormMessage[]
   tasks                     Task[]
   files                     File[]
+  projects                  Project[]
+  apiKeys                   ApiKey[]
 }
 
 model GptResponse {
@@ -108,4 +110,50 @@ model ContactFormMessage {
   content                   String
   isRead                    Boolean         @default(false)
   repliedAt                 DateTime?
+}
+
+model Project {
+  id          String      @id @default(uuid())
+  createdAt   DateTime    @default(now())
+  name        String
+  description String?
+
+  user        User        @relation(fields: [userId], references: [id])
+  userId      String
+
+  prompts     Prompt[]
+  docSources  DocSource[]
+}
+
+model Prompt {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  name        String
+  description String?
+  content     String
+  type        String   // "base" | "skill"
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+}
+
+model DocSource {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  url       String
+  label     String?
+  type      String   @default("docs") // "docs", "sitemap", "api", etc.
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+}
+
+model ApiKey {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  key       String   @unique
+  name      String
+
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
 }
