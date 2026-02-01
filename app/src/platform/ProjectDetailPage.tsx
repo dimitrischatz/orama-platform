@@ -9,6 +9,7 @@ import {
   deletePrompt,
   addDocSource,
   removeDocSource,
+  generateSkillsFromDocs,
   useQuery,
 } from "wasp/client/operations";
 import type { User, Prompt, DocSource } from "wasp/entities";
@@ -22,6 +23,8 @@ import {
   FileText,
   Sparkles,
   Globe,
+  Loader2,
+  Wand2,
 } from "lucide-react";
 import {
   Dialog,
@@ -300,6 +303,7 @@ function SkillsSection({
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Prompt | null>(null);
+  const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
 
   return (
     <div className={sectionCard + " p-6"}>
@@ -310,35 +314,57 @@ function SkillsSection({
             Skills
           </h2>
         </div>
-        <Dialog
-          open={dialogOpen}
-          onOpenChange={(open) => {
-            setDialogOpen(open);
-            if (!open) setEditingSkill(null);
-          }}
-        >
-          <DialogTrigger asChild>
-            <button className={btnOutline}>
-              <Plus className="h-4 w-4" />
-              Add Skill
-            </button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingSkill ? "Edit Skill" : "New Skill"}
-              </DialogTitle>
-            </DialogHeader>
-            <SkillForm
-              projectId={projectId}
-              skill={editingSkill}
-              onDone={() => {
-                setDialogOpen(false);
-                setEditingSkill(null);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Dialog
+            open={generateDialogOpen}
+            onOpenChange={setGenerateDialogOpen}
+          >
+            <DialogTrigger asChild>
+              <button className={btnOutline}>
+                <Wand2 className="h-4 w-4" />
+                Auto-generate
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Auto-generate Skills from Docs</DialogTitle>
+              </DialogHeader>
+              <GenerateSkillsForm
+                projectId={projectId}
+                onDone={() => setGenerateDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+          <Dialog
+            open={dialogOpen}
+            onOpenChange={(open) => {
+              setDialogOpen(open);
+              if (!open) setEditingSkill(null);
+            }}
+          >
+            <DialogTrigger asChild>
+              <button className={btnOutline}>
+                <Plus className="h-4 w-4" />
+                Add Skill
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingSkill ? "Edit Skill" : "New Skill"}
+                </DialogTitle>
+              </DialogHeader>
+              <SkillForm
+                projectId={projectId}
+                skill={editingSkill}
+                onDone={() => {
+                  setDialogOpen(false);
+                  setEditingSkill(null);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
       <p className="mb-6 text-sm text-zinc-500">
         Modular knowledge chunks the agent can pull in contextually.
@@ -505,6 +531,75 @@ function SkillForm({
         className={btnPrimary}
       >
         {saving ? "Saving..." : skill ? "Update Skill" : "Create Skill"}
+      </button>
+    </form>
+  );
+}
+
+function GenerateSkillsForm({
+  projectId,
+  onDone,
+}: {
+  projectId: string;
+  onDone: () => void;
+}) {
+  const [url, setUrl] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGenerating(true);
+    try {
+      const skills = await generateSkillsFromDocs({ projectId, url });
+      toast({
+        title: `${skills.length} skill${skills.length === 1 ? "" : "s"} generated`,
+      });
+      onDone();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-4">
+      <p className="text-sm text-zinc-500">
+        Enter a documentation URL and we'll crawl it to automatically generate
+        skills for your agent.
+      </p>
+      <div>
+        <label htmlFor="gen-url" className={labelClass}>
+          Documentation URL
+        </label>
+        <input
+          id="gen-url"
+          type="url"
+          placeholder="https://docs.example.com"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          required
+          disabled={generating}
+          className={inputClass}
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={generating || !url.trim()}
+        className={btnPrimary}
+      >
+        {generating ? (
+          <span className="inline-flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Generating skills...
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-2">
+            <Wand2 className="h-4 w-4" />
+            Generate
+          </span>
+        )}
       </button>
     </form>
   );

@@ -361,6 +361,11 @@ action deletePrompt {
   entities: [Prompt]
 }
 
+action generateSkillsFromDocs {
+  fn: import { generateSkillsFromDocs } from "@src/platform/operations",
+  entities: [Project, Prompt]
+}
+
 // API Key actions
 action generateApiKey {
   fn: import { generateApiKey } from "@src/platform/operations",

@@ -15,9 +15,12 @@ import type {
   DeletePrompt,
   GenerateApiKey,
   RevokeApiKey,
+  GenerateSkillsFromDocs,
 } from "wasp/server/operations";
 import * as z from "zod";
 import { ensureArgsSchemaOrThrowHttpError } from "../server/validation";
+import Firecrawl from "@mendable/firecrawl-js";
+import OpenAI from "openai";
 
 // ─── Queries ────────────────────────────────────────────────────────────────
 
@@ -326,6 +329,132 @@ export const deletePrompt: DeletePrompt<DeletePromptInput, Prompt> = async (
   }
 
   return context.entities.Prompt.delete({ where: { id } });
+};
+
+// ─── Generate Skills from Docs ──────────────────────────────────────────────
+
+const generateSkillsFromDocsSchema = z.object({
+  projectId: z.string(),
+  url: z.string().url(),
+});
+
+type GenerateSkillsFromDocsInput = z.infer<typeof generateSkillsFromDocsSchema>;
+
+export const generateSkillsFromDocs: GenerateSkillsFromDocs<
+  GenerateSkillsFromDocsInput,
+  Prompt[]
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { projectId, url } = ensureArgsSchemaOrThrowHttpError(
+    generateSkillsFromDocsSchema,
+    rawArgs,
+  );
+
+  // Verify project ownership
+  const project = await context.entities.Project.findUnique({
+    where: { id: projectId, userId: context.user.id },
+  });
+  if (!project) {
+    throw new HttpError(404, "Project not found");
+  }
+
+  // Crawl the docs site with Firecrawl
+  const firecrawl = new Firecrawl({
+    apiKey: process.env.FIRECRAWL_API_KEY!,
+  });
+
+  const crawlResult = await firecrawl.crawl(url, {
+    limit: 20,
+    scrapeOptions: { formats: ["markdown"] },
+  });
+
+  if (crawlResult.status !== "completed") {
+    throw new HttpError(502, "Failed to crawl the documentation site");
+  }
+
+  // Collect markdown content from crawled pages
+  const pages = (crawlResult.data ?? [])
+    .filter((page: any) => page.markdown)
+    .map((page: any) => page.markdown as string);
+
+  if (!pages.length) {
+    throw new HttpError(422, "No readable content found at the provided URL");
+  }
+
+  // Truncate to ~100k chars to stay within token limits
+  const MAX_CHARS = 100_000;
+  let aggregated = "";
+  for (const page of pages) {
+    if (aggregated.length + page.length > MAX_CHARS) {
+      aggregated += page.slice(0, MAX_CHARS - aggregated.length);
+      break;
+    }
+    aggregated += page + "\n\n---\n\n";
+  }
+
+  // Ask OpenAI to generate skills from the docs content
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.3,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: `You are an expert at analyzing documentation and extracting distinct skills for an AI agent.
+
+Given documentation content, identify the key knowledge areas and create a set of skills. Each skill should represent a distinct topic or capability the agent needs.
+
+Return a JSON object with a "skills" array. Each skill has:
+- "name": short descriptive name (e.g. "Returns Policy", "API Authentication")
+- "description": one sentence explaining when the agent should use this skill
+- "content": the actual instructions and knowledge for this skill, written as clear directives the agent can follow. Include relevant details, steps, and rules from the docs.
+
+Aim for 3-10 skills depending on the breadth of the documentation. Each skill should be self-contained and focused on one topic.`,
+      },
+      {
+        role: "user",
+        content: `Analyze the following documentation and generate skills:\n\n${aggregated}`,
+      },
+    ],
+  });
+
+  const raw = completion.choices[0]?.message?.content;
+  if (!raw) {
+    throw new HttpError(502, "Failed to generate skills from the documentation");
+  }
+
+  let parsed: { skills: { name: string; description: string; content: string }[] };
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new HttpError(502, "AI returned invalid JSON");
+  }
+
+  if (!Array.isArray(parsed.skills) || !parsed.skills.length) {
+    throw new HttpError(422, "AI could not identify any skills from the documentation");
+  }
+
+  // Bulk-create all skills
+  const created: Prompt[] = [];
+  for (const skill of parsed.skills) {
+    const prompt = await context.entities.Prompt.create({
+      data: {
+        name: skill.name,
+        description: skill.description,
+        content: skill.content,
+        type: "skill",
+        project: { connect: { id: projectId } },
+      },
+    });
+    created.push(prompt);
+  }
+
+  return created;
 };
 
 // ─── API Key Actions ────────────────────────────────────────────────────────
