@@ -121,8 +121,9 @@ model Project {
   user        User        @relation(fields: [userId], references: [id])
   userId      String
 
-  prompts     Prompt[]
-  docSources  DocSource[]
+  prompts      Prompt[]
+  docSources   DocSource[]
+  usageRecords UsageRecord[]
 }
 
 model Prompt {
@@ -145,6 +146,17 @@ model DocSource {
   type      String   @default("docs") // "docs", "sitemap", "api", etc.
 
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+}
+
+model UsageRecord {
+  id               String   @id @default(uuid())
+  createdAt        DateTime @default(now())
+  model            String
+  promptTokens     Int
+  completionTokens Int
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId String
 }
 

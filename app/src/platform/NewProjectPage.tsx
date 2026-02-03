@@ -32,7 +32,7 @@ export default function NewProjectPage(_props: { user: User }) {
   };
 
   return (
-    <div className="mx-auto max-w-2xl p-6 lg:p-10">
+    <div className="mx-auto max-w-5xl p-6 lg:p-10">
       <button
         onClick={() => navigate("/dashboard")}
         className="mb-8 inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-white"

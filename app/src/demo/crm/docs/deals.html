@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deals &amp; Pipeline - AccelCRM Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="logo">AccelCRM Docs</div>
+    <div class="section-label">Getting Started</div>
+    <a href="index.html">Overview</a>
+    <div class="section-label">Features</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="contacts.html">Contacts</a>
+    <a href="companies.html">Companies</a>
+    <a href="deals.html" class="active">Deals &amp; Pipeline</a>
+    <a href="activities.html">Activities</a>
+    <div class="section-label">Guides</div>
+    <a href="workflows.html">Common Workflows</a>
+  </nav>
+
+  <main>
+    <h1>Deals &amp; Pipeline</h1>
+    <p class="subtitle">Track sales opportunities from lead to close.</p>
+
+    <p>The Deals page is where you manage your sales pipeline. Every deal represents a sales opportunity with a dollar value and a probability of closing. Navigate to it via <strong>Deals</strong> in the sidebar, or by visiting <code>/demo/crm/deals</code>.</p>
+
+    <h2>Page Layout</h2>
+    <ul>
+      <li>Page title <strong>"Deals"</strong> with a total count.</li>
+      <li>A <strong>view mode toggle</strong>: switch between <strong>Board</strong> (Kanban) and <strong>List</strong> (table) views.</li>
+      <li>An <strong>"Add Deal"</strong> button.</li>
+    </ul>
+
+    <h2>Deal Fields</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Required</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Title</td><td>Yes</td><td>Name of the deal (e.g., "Enterprise License Renewal").</td></tr>
+        <tr><td>Value ($)</td><td>Yes</td><td>Dollar amount of the deal.</td></tr>
+        <tr><td>Stage</td><td>Yes</td><td>Current pipeline stage. See stages below.</td></tr>
+        <tr><td>Contact</td><td>Yes</td><td>The primary contact for this deal. Selected from existing contacts.</td></tr>
+        <tr><td>Company</td><td>No</td><td>The company associated with this deal. Selected from existing companies.</td></tr>
+        <tr><td>Probability (%)</td><td>Yes</td><td>Estimated chance of winning, 0&ndash;100. Defaults to 50.</td></tr>
+        <tr><td>Expected Close Date</td><td>No</td><td>Target date for closing the deal.</td></tr>
+        <tr><td>Notes</td><td>No</td><td>Free-text notes about the deal.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Pipeline Stages</h2>
+    <p>Deals progress through six stages from left to right:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>Color</th>
+          <th>Description</th>
+          <th>Default Probability</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="badge badge-gray">Lead</span></td><td>Gray</td><td>A new, unqualified opportunity.</td><td>10%</td></tr>
+        <tr><td><span class="badge badge-blue">Qualified</span></td><td>Blue</td><td>The prospect's need and budget have been verified.</td><td>30%</td></tr>
+        <tr><td><span class="badge badge-purple">Proposal</span></td><td>Purple</td><td>A proposal or quote has been sent.</td><td>50%</td></tr>
+        <tr><td><span class="badge badge-amber">Negotiation</span></td><td>Amber</td><td>Terms and pricing are being discussed.</td><td>70%</td></tr>
+        <tr><td><span class="badge badge-green">Closed Won</span></td><td>Green</td><td>The deal has been successfully closed.</td><td>100%</td></tr>
+        <tr><td><span class="badge badge-red">Closed Lost</span></td><td>Red</td><td>The deal was lost.</td><td>0%</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>Auto-probability:</strong> When you drag a deal to a new stage on the Kanban board, the probability automatically updates to the stage's default value shown above. You can still override this manually by editing the deal.
+    </div>
+
+    <h2>Board View (Kanban)</h2>
+    <p>The default view. Deals are displayed as cards organized into six columns, one per stage. Each column header shows the stage name, the number of deals in that stage, and the total dollar value.</p>
+    <p>Each deal card shows:</p>
+    <ul>
+      <li>Deal title</li>
+      <li>Deal value (in green)</li>
+      <li>Contact name</li>
+      <li>Win probability</li>
+      <li>Edit and Delete buttons</li>
+    </ul>
+    <h3>Moving deals between stages</h3>
+    <p>To move a deal to a different stage, <strong>drag the deal card</strong> from one column and <strong>drop it</strong> onto the target stage column. The deal's stage and probability will update automatically.</p>
+
+    <h2>List View</h2>
+    <p>Toggle to List view using the view mode button in the header. This displays deals in a table with the following columns:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Deal</td><td>Deal title.</td></tr>
+        <tr><td>Value</td><td>Dollar amount in green.</td></tr>
+        <tr><td>Stage</td><td>Colored badge showing the current stage.</td></tr>
+        <tr><td>Contact</td><td>Name of the linked contact.</td></tr>
+        <tr><td>Probability</td><td>Win percentage.</td></tr>
+        <tr><td>Actions</td><td>Edit and Delete buttons.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Adding a Deal</h2>
+    <ol class="steps">
+      <li>Click the <strong>"Add Deal"</strong> button.</li>
+      <li>Fill in the Title, Value, and select a Contact (required).</li>
+      <li>Choose the initial Stage, set the Probability, and optionally add a Company, Expected Close Date, and Notes.</li>
+      <li>Click <strong>"Add Deal"</strong> to save.</li>
+    </ol>
+
+    <h2>Editing a Deal</h2>
+    <ol class="steps">
+      <li>Click the <strong>pencil icon</strong> on any deal card (Board view) or row (List view).</li>
+      <li>Update any fields in the modal.</li>
+      <li>Click <strong>"Update Deal"</strong> to save changes.</li>
+    </ol>
+
+    <h2>Deleting a Deal</h2>
+    <ol class="steps">
+      <li>Click the <strong>trash icon</strong> on the deal card or row.</li>
+      <li>Confirm the deletion in the dialog.</li>
+    </ol>
+  </main>
+</body>
+</html>

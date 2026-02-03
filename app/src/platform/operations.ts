@@ -1,10 +1,11 @@
 import crypto from "crypto";
-import type { Project, Prompt, DocSource, ApiKey } from "wasp/entities";
+import type { Project, Prompt, DocSource, ApiKey, UsageRecord } from "wasp/entities";
 import { HttpError } from "wasp/server";
 import type {
   GetProjects,
   GetProjectById,
   GetApiKeys,
+  GetProjectUsage,
   CreateProject,
   UpdateProject,
   DeleteProject,
@@ -81,6 +82,80 @@ export const getApiKeys: GetApiKeys<void, ApiKey[]> = async (
     where: { userId: context.user.id },
     orderBy: { createdAt: "desc" },
   });
+};
+
+// ─── Usage Query ────────────────────────────────────────────────────────────
+
+const getProjectUsageSchema = z.object({
+  projectId: z.string().optional(),
+});
+
+type GetProjectUsageInput = z.infer<typeof getProjectUsageSchema>;
+
+type DailyProjectUsage = {
+  date: string;
+  projectId: string;
+  projectName: string;
+  requests: number;
+  promptTokens: number;
+  completionTokens: number;
+};
+
+export const getProjectUsage: GetProjectUsage<
+  GetProjectUsageInput,
+  DailyProjectUsage[]
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { projectId } = ensureArgsSchemaOrThrowHttpError(
+    getProjectUsageSchema,
+    rawArgs,
+  );
+
+  // If filtering by project, verify ownership
+  if (projectId) {
+    const project = await context.entities.Project.findUnique({
+      where: { id: projectId, userId: context.user.id },
+    });
+    if (!project) {
+      throw new HttpError(404, "Project not found");
+    }
+  }
+
+  const records = await context.entities.UsageRecord.findMany({
+    where: {
+      project: { userId: context.user.id },
+      ...(projectId ? { projectId } : {}),
+    },
+    include: { project: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Aggregate by day + project
+  const byKey = new Map<string, DailyProjectUsage>();
+  for (const r of records) {
+    const date = r.createdAt.toISOString().slice(0, 10);
+    const key = `${date}:${r.projectId}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.requests += 1;
+      existing.promptTokens += r.promptTokens;
+      existing.completionTokens += r.completionTokens;
+    } else {
+      byKey.set(key, {
+        date,
+        projectId: r.projectId,
+        projectName: r.project.name,
+        requests: 1,
+        promptTokens: r.promptTokens,
+        completionTokens: r.completionTokens,
+      });
+    }
+  }
+
+  return Array.from(byKey.values());
 };
 
 // ─── Project Actions ────────────────────────────────────────────────────────

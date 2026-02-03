@@ -11,7 +11,7 @@ import { useToast } from "../client/hooks/use-toast";
 
 export default function ApiKeysPage(_props: { user: User }) {
   return (
-    <div className="mx-auto max-w-3xl p-6 lg:p-10">
+    <div className="mx-auto max-w-5xl p-6 lg:p-10">
       <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
         API Keys
       </h1>

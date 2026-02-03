@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Companies - AccelCRM Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="logo">AccelCRM Docs</div>
+    <div class="section-label">Getting Started</div>
+    <a href="index.html">Overview</a>
+    <div class="section-label">Features</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="contacts.html">Contacts</a>
+    <a href="companies.html" class="active">Companies</a>
+    <a href="deals.html">Deals &amp; Pipeline</a>
+    <a href="activities.html">Activities</a>
+    <div class="section-label">Guides</div>
+    <a href="workflows.html">Common Workflows</a>
+  </nav>
+
+  <main>
+    <h1>Companies</h1>
+    <p class="subtitle">Track the organizations you do business with.</p>
+
+    <p>The Companies page lets you manage organizations in your pipeline. Navigate to it via <strong>Companies</strong> in the sidebar, or by visiting <code>/demo/crm/companies</code>.</p>
+
+    <h2>Page Layout</h2>
+    <ul>
+      <li>Page title <strong>"Companies"</strong> with a total count.</li>
+      <li>A <strong>search bar</strong> filtering by company name and industry.</li>
+      <li>An <strong>"Add Company"</strong> button.</li>
+    </ul>
+    <p>Companies are displayed as a <strong>responsive card grid</strong> (3 columns on desktop, fewer on smaller screens), not a table.</p>
+
+    <h2>Company Fields</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Required</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Company Name</td><td>Yes</td><td>Name of the organization.</td></tr>
+        <tr><td>Industry</td><td>No</td><td>Industry sector (e.g., "Technology", "Finance").</td></tr>
+        <tr><td>Website</td><td>No</td><td>Company URL.</td></tr>
+        <tr><td>Size</td><td>No</td><td>One of: <code>startup</code>, <code>small</code>, <code>medium</code>, or <code>enterprise</code>.</td></tr>
+        <tr><td>Revenue</td><td>No</td><td>Revenue range as free text (e.g., "$1M - $5M").</td></tr>
+        <tr><td>Address</td><td>No</td><td>Physical address.</td></tr>
+        <tr><td>Status</td><td>Yes</td><td>One of: <span class="badge badge-blue">prospect</span>, <span class="badge badge-green">customer</span>, or <span class="badge badge-red">churned</span>.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Company Statuses</h2>
+    <ul>
+      <li><span class="badge badge-blue">prospect</span> &mdash; An organization you are targeting but have not yet closed a deal with.</li>
+      <li><span class="badge badge-green">customer</span> &mdash; An active paying customer.</li>
+      <li><span class="badge badge-red">churned</span> &mdash; A former customer who is no longer active.</li>
+    </ul>
+
+    <h2>Company Cards</h2>
+    <p>Each card in the grid shows:</p>
+    <ul>
+      <li>A building icon and the company's <strong>status badge</strong>.</li>
+      <li>The <strong>company name</strong> in bold.</li>
+      <li>The <strong>industry</strong> in gray text below the name.</li>
+      <li>The number of <strong>associated contacts</strong> (e.g., "3 contacts").</li>
+      <li>The <strong>company size</strong>, if set.</li>
+      <li><strong>Edit</strong> and <strong>Delete</strong> buttons at the bottom of the card.</li>
+    </ul>
+
+    <h2>Search</h2>
+    <p>The search bar filters companies in real-time. It searches across company name and industry. The search is case-insensitive.</p>
+
+    <h2>Adding a Company</h2>
+    <ol class="steps">
+      <li>Click the <strong>"Add Company"</strong> button.</li>
+      <li>A modal form appears. Fill in at least the Company Name.</li>
+      <li>Optionally add Industry, Website, Size, Revenue, Address, and Status.</li>
+      <li>Click <strong>"Add Company"</strong> to save.</li>
+    </ol>
+
+    <h2>Editing a Company</h2>
+    <ol class="steps">
+      <li>Find the company card in the grid.</li>
+      <li>Click the <strong>Edit</strong> button on the card.</li>
+      <li>The modal opens pre-filled with the company's data.</li>
+      <li>Make changes and click <strong>"Update Company"</strong>.</li>
+    </ol>
+
+    <h2>Deleting a Company</h2>
+    <ol class="steps">
+      <li>Find the company card in the grid.</li>
+      <li>Click the <strong>Delete</strong> button on the card.</li>
+      <li>Confirm the deletion in the dialog.</li>
+    </ol>
+
+    <div class="callout">
+      <strong>Note:</strong> Deleting a company does not delete contacts or deals associated with it. Those records will remain but will no longer reference the deleted company.
+    </div>
+  </main>
+</body>
+</html>

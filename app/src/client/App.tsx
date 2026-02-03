@@ -10,6 +10,8 @@ import {
 } from "./components/NavBar/constants";
 import CookieConsentBanner from "./components/cookie-consent/Banner";
 import { DashboardLayout } from "../platform/layout/DashboardLayout";
+import { DemoStoreRoot } from "../demo/store/DemoStoreRoot";
+import { DemoCRMRoot } from "../demo/crm/DemoCRMRoot";
 
 export default function App() {
   const location = useLocation();
@@ -28,16 +30,18 @@ export default function App() {
     return location.pathname.startsWith("/admin");
   }, [location]);
 
+  const isDemoStore = useMemo(() => {
+    return location.pathname.startsWith("/demo/store");
+  }, [location]);
+
+  const isDemoCRM = useMemo(() => {
+    return location.pathname.startsWith("/demo/crm");
+  }, [location]);
+
   const navigationItems = isMarketingPage
     ? marketingNavigationItems
     : demoNavigationitems;
 
-  const shouldDisplayAppNavBar = useMemo(() => {
-    return (
-      location.pathname !== routes.LoginRoute.build() &&
-      location.pathname !== routes.SignupRoute.build()
-    );
-  }, [location]);
 
   useEffect(() => {
     if (location.hash) {
@@ -49,6 +53,23 @@ export default function App() {
     }
   }, [location]);
 
+  // Demo routes use early returns to ensure providers stay mounted
+  if (isDemoStore) {
+    return (
+      <DemoStoreRoot>
+        <Outlet />
+      </DemoStoreRoot>
+    );
+  }
+
+  if (isDemoCRM) {
+    return (
+      <DemoCRMRoot>
+        <Outlet />
+      </DemoCRMRoot>
+    );
+  }
+
   return (
     <>
       <div className="bg-background text-foreground min-h-screen">
@@ -58,9 +79,6 @@ export default function App() {
           <Outlet />
         ) : (
           <>
-            {shouldDisplayAppNavBar && (
-              <NavBar navigationItems={navigationItems} />
-            )}
             <div className="mx-auto max-w-screen-2xl">
               <Outlet />
             </div>

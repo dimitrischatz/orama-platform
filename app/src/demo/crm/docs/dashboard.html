@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - AccelCRM Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="logo">AccelCRM Docs</div>
+    <div class="section-label">Getting Started</div>
+    <a href="index.html">Overview</a>
+    <div class="section-label">Features</div>
+    <a href="dashboard.html" class="active">Dashboard</a>
+    <a href="contacts.html">Contacts</a>
+    <a href="companies.html">Companies</a>
+    <a href="deals.html">Deals &amp; Pipeline</a>
+    <a href="activities.html">Activities</a>
+    <div class="section-label">Guides</div>
+    <a href="workflows.html">Common Workflows</a>
+  </nav>
+
+  <main>
+    <h1>Dashboard</h1>
+    <p class="subtitle">A real-time summary of your CRM data at a glance.</p>
+
+    <p>The Dashboard is the default landing page when you open AccelCRM. It provides a high-level overview of your sales pipeline, contacts, and upcoming work.</p>
+
+    <h2>Metric Cards</h2>
+    <p>Four summary cards are displayed across the top of the dashboard:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Card</th>
+          <th>What It Shows</th>
+          <th>How It's Calculated</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Total Contacts</strong></td>
+          <td>Number of people in your CRM</td>
+          <td>Simple count of all contacts</td>
+        </tr>
+        <tr>
+          <td><strong>Companies</strong></td>
+          <td>Number of organizations tracked</td>
+          <td>Simple count of all companies</td>
+        </tr>
+        <tr>
+          <td><strong>Pipeline Value</strong></td>
+          <td>Weighted value of open deals</td>
+          <td>Sum of (deal value &times; probability) for all deals <em>not</em> in <code>closed_won</code> or <code>closed_lost</code> stages</td>
+        </tr>
+        <tr>
+          <td><strong>Closed Won</strong></td>
+          <td>Total revenue from won deals</td>
+          <td>Sum of the value of all deals in the <code>closed_won</code> stage</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Open Deals Section</h2>
+    <p>Below the metric cards, the dashboard lists up to <strong>5 most recent open deals</strong>. Each entry shows:</p>
+    <ul>
+      <li>Deal title</li>
+      <li>Current pipeline stage (as a colored badge)</li>
+      <li>Deal value in dollars</li>
+      <li>Win probability percentage</li>
+    </ul>
+    <p>A <strong>"View all deals"</strong> link at the bottom navigates to the full Deals page.</p>
+
+    <h2>Pending Activities Section</h2>
+    <p>The dashboard also shows up to <strong>5 pending (incomplete) activities</strong>. Each entry shows:</p>
+    <ul>
+      <li>Activity title</li>
+      <li>Activity type (call, email, meeting, task, or note) as a color-coded badge</li>
+      <li>Due date, if one is set</li>
+    </ul>
+    <p>A <strong>"View all activities"</strong> link at the bottom navigates to the full Activities page.</p>
+
+    <div class="callout">
+      <strong>Tip:</strong> The dashboard updates in real-time as you add, edit, or remove contacts, companies, deals, and activities. There is no need to refresh.
+    </div>
+  </main>
+</body>
+</html>

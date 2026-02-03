@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AccelCRM Documentation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="logo">AccelCRM Docs</div>
+    <div class="section-label">Getting Started</div>
+    <a href="index.html" class="active">Overview</a>
+    <div class="section-label">Features</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="contacts.html">Contacts</a>
+    <a href="companies.html">Companies</a>
+    <a href="deals.html">Deals &amp; Pipeline</a>
+    <a href="activities.html">Activities</a>
+    <div class="section-label">Guides</div>
+    <a href="workflows.html">Common Workflows</a>
+  </nav>
+
+  <main>
+    <h1>AccelCRM Documentation</h1>
+    <p class="subtitle">Your sales pipeline and customer relationship management platform.</p>
+
+    <p>AccelCRM helps sales teams manage their contacts, companies, deals, and day-to-day activities from a single interface. This documentation covers every feature of the platform and how to use it effectively.</p>
+
+    <h2>Platform Overview</h2>
+    <p>AccelCRM is organized into five main sections, accessible from the sidebar navigation:</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Section</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Dashboard</strong></td>
+          <td>At-a-glance metrics: total contacts, companies, pipeline value, and closed-won revenue. Also shows recent open deals and pending activities.</td>
+        </tr>
+        <tr>
+          <td><strong>Contacts</strong></td>
+          <td>Manage individual people. Each contact has a name, email, phone, job title, associated company, and a status (lead, active, or inactive).</td>
+        </tr>
+        <tr>
+          <td><strong>Companies</strong></td>
+          <td>Manage organizations. Each company has an industry, website, size classification, revenue range, and a status (prospect, customer, or churned).</td>
+        </tr>
+        <tr>
+          <td><strong>Deals</strong></td>
+          <td>Track sales opportunities through a six-stage pipeline. Deals have a dollar value, win probability, and are linked to a contact and optionally a company. Viewable as a Kanban board or a list.</td>
+        </tr>
+        <tr>
+          <td><strong>Activities</strong></td>
+          <td>Log and track calls, emails, meetings, tasks, and notes. Activities can be linked to a contact or deal and marked as completed.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Navigation</h2>
+    <p>The left sidebar provides links to all sections. On mobile screens (under 1024px), the sidebar collapses behind a hamburger menu button in the top-left corner. Tap the button to open it, or tap outside to close it.</p>
+    <p>At the bottom of the sidebar you will find:</p>
+    <ul>
+      <li><strong>Back to Demos</strong> &mdash; returns to the demo selection screen.</li>
+      <li><strong>Reset Demo</strong> &mdash; restores all data to its original seed state. A confirmation dialog is shown before resetting.</li>
+    </ul>
+
+    <h2>Key Concepts</h2>
+
+    <h3>Statuses</h3>
+    <p>Both contacts and companies have status fields that indicate where they are in the customer lifecycle:</p>
+    <ul>
+      <li><strong>Contacts:</strong> <span class="badge badge-blue">lead</span> &rarr; <span class="badge badge-green">active</span> &rarr; <span class="badge badge-gray">inactive</span></li>
+      <li><strong>Companies:</strong> <span class="badge badge-blue">prospect</span> &rarr; <span class="badge badge-green">customer</span> &rarr; <span class="badge badge-red">churned</span></li>
+    </ul>
+
+    <h3>Pipeline Value</h3>
+    <p>The pipeline value displayed on the dashboard is a <em>weighted</em> total. It is calculated by summing each open deal's value multiplied by its win probability. For example, a $100,000 deal at 50% probability contributes $50,000 to the pipeline value.</p>
+
+    <h3>Data Relationships</h3>
+    <p>Entities in AccelCRM are connected:</p>
+    <ul>
+      <li>A <strong>Contact</strong> can belong to a <strong>Company</strong>.</li>
+      <li>A <strong>Deal</strong> is always linked to a <strong>Contact</strong> and optionally to a <strong>Company</strong>.</li>
+      <li>An <strong>Activity</strong> can be linked to a <strong>Contact</strong>, a <strong>Deal</strong>, or both.</li>
+    </ul>
+  </main>
+</body>
+</html>

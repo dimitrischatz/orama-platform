@@ -105,7 +105,7 @@ export default function ProjectDetailPage(_props: { user: User }) {
   };
 
   return (
-    <div className="mx-auto max-w-4xl p-6 lg:p-10">
+    <div className="mx-auto max-w-5xl p-6 lg:p-10">
       <div className="mb-8 flex items-center justify-between">
         <button
           onClick={() => navigate("/dashboard")}
@@ -785,3 +785,4 @@ function DocSourceForm({
     </form>
   );
 }
+

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activities - AccelCRM Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="logo">AccelCRM Docs</div>
+    <div class="section-label">Getting Started</div>
+    <a href="index.html">Overview</a>
+    <div class="section-label">Features</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="contacts.html">Contacts</a>
+    <a href="companies.html">Companies</a>
+    <a href="deals.html">Deals &amp; Pipeline</a>
+    <a href="activities.html" class="active">Activities</a>
+    <div class="section-label">Guides</div>
+    <a href="workflows.html">Common Workflows</a>
+  </nav>
+
+  <main>
+    <h1>Activities</h1>
+    <p class="subtitle">Log calls, emails, meetings, tasks, and notes.</p>
+
+    <p>The Activities page is your task and interaction log. Use it to track every touchpoint with your contacts and deals. Navigate to it via <strong>Activities</strong> in the sidebar, or by visiting <code>/demo/crm/activities</code>.</p>
+
+    <h2>Page Layout</h2>
+    <ul>
+      <li>Page title <strong>"Activities"</strong> with a total count.</li>
+      <li><strong>Filter chips</strong>: All, Pending, Completed.</li>
+      <li>An <strong>"Add Activity"</strong> button.</li>
+    </ul>
+    <p>Activities are displayed as a vertical list of cards.</p>
+
+    <h2>Activity Fields</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Required</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Type</td><td>Yes</td><td>One of: <code>call</code>, <code>email</code>, <code>meeting</code>, <code>task</code>, or <code>note</code>.</td></tr>
+        <tr><td>Title</td><td>Yes</td><td>Short description of the activity.</td></tr>
+        <tr><td>Description</td><td>No</td><td>Longer details (textarea).</td></tr>
+        <tr><td>Contact</td><td>No</td><td>Link this activity to a specific contact.</td></tr>
+        <tr><td>Deal</td><td>No</td><td>Link this activity to a specific deal.</td></tr>
+        <tr><td>Due Date</td><td>No</td><td>When this activity is due.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Activity Types</h2>
+    <p>Each type has a distinct color and icon for quick visual identification:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Color</th>
+          <th>Icon</th>
+          <th>Typical Use</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="badge badge-blue">call</span></td><td>Blue</td><td>Phone</td><td>Phone calls with contacts.</td></tr>
+        <tr><td><span class="badge badge-purple">email</span></td><td>Purple</td><td>Envelope</td><td>Emails sent or to send.</td></tr>
+        <tr><td><span class="badge badge-green">meeting</span></td><td>Green</td><td>Calendar</td><td>Scheduled meetings or demos.</td></tr>
+        <tr><td><span class="badge badge-amber">task</span></td><td>Amber</td><td>Checkbox</td><td>Internal to-do items (e.g., "Prepare contract").</td></tr>
+        <tr><td><span class="badge badge-gray">note</span></td><td>Gray</td><td>Pencil</td><td>General notes or observations.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Activity Cards</h2>
+    <p>Each activity card contains:</p>
+    <ul>
+      <li>A <strong>checkbox</strong> on the left to toggle completion.</li>
+      <li>A <strong>color-coded icon</strong> matching the activity type.</li>
+      <li>The activity <strong>title</strong> (with strikethrough styling if completed).</li>
+      <li>The <strong>description</strong>, if present.</li>
+      <li>Linked <strong>contact</strong> name (with a person icon), if set.</li>
+      <li>Linked <strong>deal</strong> name (with a currency icon), if set.</li>
+      <li>The <strong>due date</strong> (with a calendar icon), if set.</li>
+      <li>A <strong>type badge</strong> on the right.</li>
+      <li><strong>Edit</strong> and <strong>Delete</strong> buttons (visible on hover).</li>
+    </ul>
+
+    <h2>Filtering Activities</h2>
+    <p>Use the filter chips at the top of the page:</p>
+    <ul>
+      <li><strong>All</strong> &mdash; shows every activity regardless of status.</li>
+      <li><strong>Pending</strong> &mdash; shows only incomplete activities.</li>
+      <li><strong>Completed</strong> &mdash; shows only finished activities.</li>
+    </ul>
+
+    <h2>Marking an Activity Complete</h2>
+    <p>Click the <strong>checkbox</strong> on the left side of any activity card. The activity will:</p>
+    <ul>
+      <li>Show an animated checkmark.</li>
+      <li>Have its title displayed with a strikethrough style and reduced opacity.</li>
+      <li>Move to the "Completed" filter group.</li>
+    </ul>
+    <p>Click the checkbox again to mark it as pending.</p>
+
+    <h2>Adding an Activity</h2>
+    <ol class="steps">
+      <li>Click the <strong>"Add Activity"</strong> button.</li>
+      <li>Select the activity Type from the dropdown.</li>
+      <li>Enter a Title (required).</li>
+      <li>Optionally add a Description, link a Contact, link a Deal, and set a Due Date.</li>
+      <li>Click <strong>"Add Activity"</strong> to save.</li>
+    </ol>
+    <p>New activities always start as <strong>pending</strong> (not completed).</p>
+
+    <h2>Editing an Activity</h2>
+    <ol class="steps">
+      <li>Hover over the activity card to reveal the action buttons.</li>
+      <li>Click the <strong>Edit</strong> button.</li>
+      <li>Update any fields in the modal.</li>
+      <li>Click <strong>"Update Activity"</strong> to save.</li>
+    </ol>
+
+    <h2>Deleting an Activity</h2>
+    <ol class="steps">
+      <li>Hover over the activity card to reveal the action buttons.</li>
+      <li>Click the <strong>Delete</strong> button.</li>
+      <li>Confirm the deletion in the dialog.</li>
+    </ol>
+  </main>
+</body>
+</html>

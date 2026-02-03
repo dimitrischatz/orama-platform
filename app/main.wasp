@@ -296,6 +296,12 @@ page ProjectDetailPage {
   component: import ProjectDetailPage from "@src/platform/ProjectDetailPage"
 }
 
+route UsageRoute { path: "/dashboard/usage", to: UsagePage }
+page UsagePage {
+  authRequired: true,
+  component: import UsagePage from "@src/platform/UsagePage"
+}
+
 route ApiKeysRoute { path: "/dashboard/keys", to: ApiKeysPage }
 page ApiKeysPage {
   authRequired: true,
@@ -316,6 +322,11 @@ query getProjectById {
 query getApiKeys {
   fn: import { getApiKeys } from "@src/platform/operations",
   entities: [ApiKey]
+}
+
+query getProjectUsage {
+  fn: import { getProjectUsage } from "@src/platform/operations",
+  entities: [UsageRecord, Project]
 }
 
 // Project actions
@@ -375,5 +386,84 @@ action generateApiKey {
 action revokeApiKey {
   fn: import { revokeApiKey } from "@src/platform/operations",
   entities: [ApiKey]
+}
+//#endregion
+
+//#region Demo Showcase
+route DemoLandingRoute { path: "/demo", to: DemoLandingPage }
+page DemoLandingPage {
+  component: import { DemoLandingPage } from "@src/demo/pages"
+}
+
+// CRM Demo
+route DemoCRMRoute { path: "/demo/crm", to: DemoCRMDashboardPage }
+page DemoCRMDashboardPage {
+  component: import { DemoCRMDashboardPage } from "@src/demo/pages"
+}
+
+route DemoCRMContactsRoute { path: "/demo/crm/contacts", to: DemoCRMContactsPage }
+page DemoCRMContactsPage {
+  component: import { DemoCRMContactsPage } from "@src/demo/pages"
+}
+
+route DemoCRMCompaniesRoute { path: "/demo/crm/companies", to: DemoCRMCompaniesPage }
+page DemoCRMCompaniesPage {
+  component: import { DemoCRMCompaniesPage } from "@src/demo/pages"
+}
+
+route DemoCRMDealsRoute { path: "/demo/crm/deals", to: DemoCRMDealsPage }
+page DemoCRMDealsPage {
+  component: import { DemoCRMDealsPage } from "@src/demo/pages"
+}
+
+route DemoCRMActivitiesRoute { path: "/demo/crm/activities", to: DemoCRMActivitiesPage }
+page DemoCRMActivitiesPage {
+  component: import { DemoCRMActivitiesPage } from "@src/demo/pages"
+}
+
+route DemoCRMDocsRoute { path: "/demo/crm/docs/:page?", to: DemoCRMDocsPage }
+page DemoCRMDocsPage {
+  component: import { DemoCRMDocsPageWrapper } from "@src/demo/pages"
+}
+
+// Store Demo
+route DemoStoreRoute { path: "/demo/store", to: DemoStoreDashboardPage }
+page DemoStoreDashboardPage {
+  component: import { DemoStoreDashboardPage } from "@src/demo/pages"
+}
+
+route DemoStoreProductsRoute { path: "/demo/store/products", to: DemoStoreProductsPage }
+page DemoStoreProductsPage {
+  component: import { DemoStoreProductsPage } from "@src/demo/pages"
+}
+
+route DemoStoreProductNewRoute { path: "/demo/store/products/new", to: DemoStoreProductNewPage }
+page DemoStoreProductNewPage {
+  component: import { DemoStoreProductNewPage } from "@src/demo/pages"
+}
+
+route DemoStoreProductEditRoute { path: "/demo/store/products/:id/edit", to: DemoStoreProductEditPage }
+page DemoStoreProductEditPage {
+  component: import { DemoStoreProductEditPage } from "@src/demo/pages"
+}
+
+route DemoStoreOrdersRoute { path: "/demo/store/orders", to: DemoStoreOrdersPage }
+page DemoStoreOrdersPage {
+  component: import { DemoStoreOrdersPage } from "@src/demo/pages"
+}
+
+route DemoStoreOrderDetailRoute { path: "/demo/store/orders/:id", to: DemoStoreOrderDetailPage }
+page DemoStoreOrderDetailPage {
+  component: import { DemoStoreOrderDetailPage } from "@src/demo/pages"
+}
+
+route DemoStoreInventoryRoute { path: "/demo/store/inventory", to: DemoStoreInventoryPage }
+page DemoStoreInventoryPage {
+  component: import { DemoStoreInventoryPage } from "@src/demo/pages"
+}
+
+route DemoStoreSettingsRoute { path: "/demo/store/settings", to: DemoStoreSettingsPage }
+page DemoStoreSettingsPage {
+  component: import { DemoStoreSettingsPage } from "@src/demo/pages"
 }
 //#endregion

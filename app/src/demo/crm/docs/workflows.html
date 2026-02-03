@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Common Workflows - AccelCRM Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="logo">AccelCRM Docs</div>
+    <div class="section-label">Getting Started</div>
+    <a href="index.html">Overview</a>
+    <div class="section-label">Features</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="contacts.html">Contacts</a>
+    <a href="companies.html">Companies</a>
+    <a href="deals.html">Deals &amp; Pipeline</a>
+    <a href="activities.html">Activities</a>
+    <div class="section-label">Guides</div>
+    <a href="workflows.html" class="active">Common Workflows</a>
+  </nav>
+
+  <main>
+    <h1>Common Workflows</h1>
+    <p class="subtitle">Step-by-step guides for typical CRM tasks.</p>
+
+    <h2>Onboard a New Prospect</h2>
+    <p>When a new potential customer reaches out, follow these steps to get them into the system:</p>
+    <ol class="steps">
+      <li>Go to <strong>Companies</strong> and click <strong>"Add Company"</strong>. Enter the company name, industry, and set the status to <span class="badge badge-blue">prospect</span>.</li>
+      <li>Go to <strong>Contacts</strong> and click <strong>"Add Contact"</strong>. Enter the person's details and select the company you just created from the Company dropdown. Set the status to <span class="badge badge-blue">lead</span>.</li>
+      <li>Go to <strong>Deals</strong> and click <strong>"Add Deal"</strong>. Give it a title, estimated value, select the contact, and set the stage to <span class="badge badge-gray">Lead</span>.</li>
+      <li>Go to <strong>Activities</strong> and click <strong>"Add Activity"</strong>. Create a <code>call</code> or <code>meeting</code> activity linked to the contact and deal, with a due date for your first outreach.</li>
+    </ol>
+
+    <h2>Advance a Deal Through the Pipeline</h2>
+    <p>As you progress with a prospect, move the deal through stages:</p>
+    <ol class="steps">
+      <li>Navigate to the <strong>Deals</strong> page (Board view).</li>
+      <li>Find the deal card in its current stage column.</li>
+      <li><strong>Drag the card</strong> to the next stage column (e.g., from "Lead" to "Qualified").</li>
+      <li>The probability updates automatically. If needed, click Edit on the deal to adjust the probability or add notes.</li>
+      <li>Log a follow-up activity on the <strong>Activities</strong> page to record what happened (e.g., "Discovery call completed") and plan next steps.</li>
+    </ol>
+
+    <h2>Close a Deal</h2>
+    <p>When a deal reaches its conclusion:</p>
+    <ol class="steps">
+      <li>On the <strong>Deals</strong> board, drag the deal to <span class="badge badge-green">Closed Won</span> or <span class="badge badge-red">Closed Lost</span>.</li>
+      <li>If won: go to <strong>Companies</strong>, find the company, click Edit, and change the status from <span class="badge badge-blue">prospect</span> to <span class="badge badge-green">customer</span>.</li>
+      <li>If won: go to <strong>Contacts</strong>, find the contact, click Edit, and change the status from <span class="badge badge-blue">lead</span> to <span class="badge badge-green">active</span>.</li>
+      <li>Log a <code>note</code> activity summarizing the outcome.</li>
+    </ol>
+
+    <h2>Track Daily Activities</h2>
+    <p>Use the Activities page as your daily task list:</p>
+    <ol class="steps">
+      <li>Go to <strong>Activities</strong> and filter by <strong>Pending</strong>.</li>
+      <li>Review your pending calls, emails, meetings, and tasks.</li>
+      <li>As you complete each one, <strong>click the checkbox</strong> to mark it done.</li>
+      <li>Add new activities for any follow-ups that arise.</li>
+    </ol>
+
+    <h2>Review Pipeline Health</h2>
+    <p>Use the Dashboard to assess your overall pipeline:</p>
+    <ol class="steps">
+      <li>Go to the <strong>Dashboard</strong>.</li>
+      <li>Check the <strong>Pipeline Value</strong> card &mdash; this is the weighted total of all open deals. If it is declining, you may need to add new deals or advance existing ones.</li>
+      <li>Check the <strong>Closed Won</strong> card to see your total revenue from completed deals.</li>
+      <li>Review the <strong>Open Deals</strong> section to see which deals are active and at what stage.</li>
+      <li>Review the <strong>Pending Activities</strong> section to make sure nothing is overdue.</li>
+    </ol>
+
+    <h2>Update a Contact's Company</h2>
+    <p>If a contact moves to a different organization:</p>
+    <ol class="steps">
+      <li>Make sure the new company exists. If not, go to <strong>Companies</strong> and add it first.</li>
+      <li>Go to <strong>Contacts</strong>, find the contact, and click the <strong>Edit</strong> button.</li>
+      <li>Change the <strong>Company</strong> dropdown to the new company.</li>
+      <li>Update the contact's <strong>Title</strong> if their role has changed.</li>
+      <li>Click <strong>"Update Contact"</strong> to save.</li>
+    </ol>
+
+    <h2>Reset the Demo</h2>
+    <p>If you want to start fresh with the original sample data:</p>
+    <ol class="steps">
+      <li>Click <strong>"Reset Demo"</strong> at the bottom of the sidebar.</li>
+      <li>A confirmation dialog will appear. Click <strong>Confirm</strong>.</li>
+      <li>All contacts, companies, deals, and activities revert to the initial seed data.</li>
+    </ol>
+
+    <div class="callout">
+      <strong>Warning:</strong> Resetting the demo permanently discards all changes you have made. This action cannot be undone.
+    </div>
+  </main>
+</body>
+</html>

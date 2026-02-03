@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth, logout } from "wasp/client/auth";
 import { routes } from "wasp/client/router";
-import { FolderKanban, Key, LogOut, Settings, X } from "lucide-react";
+import { FolderKanban, Key, BarChart3, LogOut, Settings, X } from "lucide-react";
 import { cn } from "../../client/utils";
 
 const navItems = [
@@ -10,6 +10,12 @@ const navItems = [
     to: routes.DashboardRoute.to,
     icon: FolderKanban,
     match: "/dashboard",
+  },
+  {
+    label: "Usage",
+    to: routes.UsageRoute.to,
+    icon: BarChart3,
+    match: "/dashboard/usage",
   },
   {
     label: "API Keys",

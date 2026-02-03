@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contacts - AccelCRM Docs</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav>
+    <div class="logo">AccelCRM Docs</div>
+    <div class="section-label">Getting Started</div>
+    <a href="index.html">Overview</a>
+    <div class="section-label">Features</div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="contacts.html" class="active">Contacts</a>
+    <a href="companies.html">Companies</a>
+    <a href="deals.html">Deals &amp; Pipeline</a>
+    <a href="activities.html">Activities</a>
+    <div class="section-label">Guides</div>
+    <a href="workflows.html">Common Workflows</a>
+  </nav>
+
+  <main>
+    <h1>Contacts</h1>
+    <p class="subtitle">Manage the people in your sales pipeline.</p>
+
+    <p>The Contacts page lets you store and manage information about individual people &mdash; leads, active customers, and past contacts. Navigate to it via <strong>Contacts</strong> in the sidebar, or by visiting <code>/demo/crm/contacts</code>.</p>
+
+    <h2>Page Layout</h2>
+    <p>At the top of the page you will see:</p>
+    <ul>
+      <li>The page title <strong>"Contacts"</strong> with a count of total contacts.</li>
+      <li>A <strong>search bar</strong> that filters contacts in real-time.</li>
+      <li>An <strong>"Add Contact"</strong> button that opens the contact creation form.</li>
+    </ul>
+    <p>Below is a table listing all contacts.</p>
+
+    <h2>Contact Fields</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th>Required</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>First Name</td><td>Yes</td><td>Contact's first name.</td></tr>
+        <tr><td>Last Name</td><td>Yes</td><td>Contact's last name.</td></tr>
+        <tr><td>Email</td><td>Yes</td><td>Must be a valid email address.</td></tr>
+        <tr><td>Phone</td><td>No</td><td>Phone number, any format.</td></tr>
+        <tr><td>Company</td><td>No</td><td>Dropdown of existing companies. Links this contact to a company.</td></tr>
+        <tr><td>Title</td><td>No</td><td>Job title (e.g., "VP Engineering", "CTO").</td></tr>
+        <tr><td>Status</td><td>Yes</td><td>One of: <span class="badge badge-blue">lead</span>, <span class="badge badge-green">active</span>, or <span class="badge badge-gray">inactive</span>.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Contact Statuses</h2>
+    <ul>
+      <li><span class="badge badge-blue">lead</span> &mdash; A new prospect who has not yet become a customer.</li>
+      <li><span class="badge badge-green">active</span> &mdash; A current, engaged contact or customer.</li>
+      <li><span class="badge badge-gray">inactive</span> &mdash; A contact that is no longer active or engaged.</li>
+    </ul>
+
+    <h2>Contacts Table</h2>
+    <p>The table displays the following columns:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Name</td><td>Full name (first + last). The contact's job title appears as a subtitle beneath the name.</td></tr>
+        <tr><td>Email</td><td>Email address.</td></tr>
+        <tr><td>Company</td><td>The associated company name, if any.</td></tr>
+        <tr><td>Status</td><td>Colored badge showing <code>lead</code>, <code>active</code>, or <code>inactive</code>.</td></tr>
+        <tr><td>Actions</td><td><strong>Edit</strong> (pencil icon) and <strong>Delete</strong> (trash icon) buttons.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Search</h2>
+    <p>The search bar filters the contact list in real-time as you type. It searches across first name, last name, email, and company name simultaneously. The search is case-insensitive.</p>
+
+    <h2>Adding a Contact</h2>
+    <ol class="steps">
+      <li>Click the <strong>"Add Contact"</strong> button in the top-right corner.</li>
+      <li>A modal form appears. Fill in at least the required fields: First Name, Last Name, and Email.</li>
+      <li>Optionally select a Company from the dropdown, add a Phone number, Job Title, and set the Status.</li>
+      <li>Click <strong>"Add Contact"</strong> at the bottom of the modal to save.</li>
+    </ol>
+
+    <h2>Editing a Contact</h2>
+    <ol class="steps">
+      <li>Find the contact in the table.</li>
+      <li>Click the <strong>pencil icon</strong> in the Actions column.</li>
+      <li>The same modal opens, pre-filled with the contact's current data.</li>
+      <li>Make your changes and click <strong>"Update Contact"</strong>.</li>
+    </ol>
+
+    <h2>Deleting a Contact</h2>
+    <ol class="steps">
+      <li>Find the contact in the table.</li>
+      <li>Click the <strong>trash icon</strong> in the Actions column.</li>
+      <li>A confirmation dialog appears. Confirm to permanently delete the contact.</li>
+    </ol>
+
+    <div class="callout">
+      <strong>Note:</strong> Deleting a contact does not automatically delete deals or activities linked to that contact. Those records will remain but will show the contact as unlinked.
+    </div>
+  </main>
+</body>
+</html>
