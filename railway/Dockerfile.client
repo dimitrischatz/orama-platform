@@ -19,8 +19,14 @@ COPY ./app /app
 RUN wasp build
 
 ARG REACT_APP_API_URL
+ARG REACT_APP_ORAMA_API_KEY
+ARG REACT_APP_ORAMA_API_URL
 
-RUN npm install && cd .wasp/build/web-app && npm install && REACT_APP_API_URL=$REACT_APP_API_URL npm run build
+RUN npm install && cd .wasp/build/web-app && npm install && \
+    REACT_APP_API_URL=$REACT_APP_API_URL \
+    REACT_APP_ORAMA_API_KEY=$REACT_APP_ORAMA_API_KEY \
+    REACT_APP_ORAMA_API_URL=$REACT_APP_ORAMA_API_URL \
+    npm run build
 
 FROM caddy
 
