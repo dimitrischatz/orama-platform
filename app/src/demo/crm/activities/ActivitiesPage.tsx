@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useCRM } from '../context/CRMContext';
-import { DemoCRMLayout } from '../DemoCRMLayout';
 import type { Activity, ActivityType } from '../types';
 
 const activityTypes: { id: ActivityType; label: string; color: string; icon: React.ReactNode }[] = [
@@ -77,7 +76,7 @@ export function ActivitiesPage() {
   };
 
   return (
-    <DemoCRMLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -311,6 +310,6 @@ export function ActivitiesPage() {
           </div>
         </div>
       )}
-    </DemoCRMLayout>
+    </>
   );
 }

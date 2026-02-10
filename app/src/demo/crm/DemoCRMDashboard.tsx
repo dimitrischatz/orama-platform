@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useCRM } from './context/CRMContext';
-import { DemoCRMLayout } from './DemoCRMLayout';
 
 export function DemoCRMDashboard() {
   const { contacts, companies, deals, activities, getPipelineValue, getWonDealsValue } = useCRM();
@@ -13,7 +12,7 @@ export function DemoCRMDashboard() {
   };
 
   return (
-    <DemoCRMLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -168,6 +167,6 @@ export function DemoCRMDashboard() {
           </div>
         </div>
       </div>
-    </DemoCRMLayout>
+    </>
   );
 }

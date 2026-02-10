@@ -25,6 +25,9 @@ import {
   Globe,
   Loader2,
   Wand2,
+  Code2,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   Dialog,
@@ -34,6 +37,7 @@ import {
   DialogTrigger,
 } from "../client/components/ui/dialog";
 import { useToast } from "../client/hooks/use-toast";
+import { Highlight, themes } from "prism-react-renderer";
 
 // ─── Shared styles ──────────────────────────────────────────────────────────
 
@@ -131,6 +135,7 @@ export default function ProjectDetailPage(_props: { user: User }) {
           projectId={project.id}
           docSources={project.docSources}
         />
+        <IntegrationSection projectId={project.id} />
       </div>
     </div>
   );
@@ -783,6 +788,110 @@ function DocSourceForm({
         {saving ? "Adding..." : "Add Source"}
       </button>
     </form>
+  );
+}
+
+// ─── Integration Guide ──────────────────────────────────────────────────────
+
+function CodeBlock({ code, language = "tsx" }: { code: string; language?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative rounded-xl border border-zinc-200 bg-zinc-950 dark:border-zinc-700">
+      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+        <span className="text-xs text-zinc-500">{language}</span>
+        <button
+          onClick={handleCopy}
+          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+        >
+          {copied ? (
+            <>
+              <Check className="h-3 w-3" />
+              Copied
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" />
+              Copy
+            </>
+          )}
+        </button>
+      </div>
+      <Highlight theme={themes.nightOwl} code={code.trim()} language={language as any}>
+        {({ tokens, getLineProps, getTokenProps }) => (
+          <pre className="overflow-x-auto p-4 text-sm leading-relaxed" style={{ background: "transparent" }}>
+            {tokens.map((line, i) => (
+              <div key={i} {...getLineProps({ line })}>
+                {line.map((token, key) => (
+                  <span key={key} {...getTokenProps({ token })} />
+                ))}
+              </div>
+            ))}
+          </pre>
+        )}
+      </Highlight>
+    </div>
+  );
+}
+
+function IntegrationSection({ projectId }: { projectId: string }) {
+  const installSnippet = `npm install @orama/agent`;
+
+  const providerSnippet = `import { OramaProvider } from '@orama/agent';
+
+function App() {
+  return (
+    <OramaProvider
+      config={{
+        apiKey: import.meta.env.REACT_APP_ORAMA_API_KEY,
+        apiUrl: import.meta.env.REACT_APP_ORAMA_API_URL,
+        systemPrompt: \`You are a helpful assistant...\`,
+      }}
+    >
+      {/* Your app components */}
+    </OramaProvider>
+  );
+}`;
+
+  return (
+    <div className={sectionCard + " p-6"}>
+      <div className="mb-1 flex items-center gap-2">
+        <Code2 className="h-5 w-5 text-orange-500" />
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+          Integrate into Your App
+        </h2>
+      </div>
+      <p className="mb-6 text-sm text-zinc-500">
+        Add the Orama agent to your React application in two steps.
+      </p>
+
+      <div className="flex flex-col gap-6">
+        {/* Step 1 */}
+        <div>
+          <h3 className="mb-2 text-sm font-medium text-zinc-900 dark:text-zinc-200">
+            1. Install the package
+          </h3>
+          <CodeBlock code={installSnippet} language="bash" />
+        </div>
+
+        {/* Step 2 */}
+        <div>
+          <h3 className="mb-2 text-sm font-medium text-zinc-900 dark:text-zinc-200">
+            2. Wrap your app with OramaProvider
+          </h3>
+          <p className="mb-3 text-sm text-zinc-500">
+            Add the <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">OramaProvider</code> at the root of your component tree. The system prompt you configured in the Base Prompt section above will define your agent's behavior.
+          </p>
+          <CodeBlock code={providerSnippet} language="tsx" />
+        </div>
+      </div>
+    </div>
   );
 }
 

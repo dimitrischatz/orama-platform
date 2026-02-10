@@ -2,6 +2,8 @@ import React from 'react';
 import { CRMProvider } from './context/CRMContext';
 import { OramaProvider } from '@orama/agent';
 
+
+
 const CRM_SYSTEM_PROMPT = `You are a helpful CRM assistant for a sales team. You help users manage their contacts, companies, deals, and activities.
 
 ## Your Capabilities
@@ -81,6 +83,7 @@ interface DemoCRMRootProps {
 
 export function DemoCRMRoot({ children }: DemoCRMRootProps) {
   return (
+
     <OramaProvider
       config={{
         apiKey: import.meta.env.REACT_APP_ORAMA_API_KEY,
@@ -92,5 +95,7 @@ export function DemoCRMRoot({ children }: DemoCRMRootProps) {
         {children}
       </CRMProvider>
     </OramaProvider>
+
+      
   );
 }

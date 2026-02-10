@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useCRM } from '../context/CRMContext';
-import { DemoCRMLayout } from '../DemoCRMLayout';
 import type { Deal, DealStage } from '../types';
 
 const stages: { id: DealStage; label: string; color: string }[] = [
@@ -65,7 +64,7 @@ export function DealsPage() {
   };
 
   return (
-    <DemoCRMLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -345,6 +344,6 @@ export function DealsPage() {
           </div>
         </div>
       )}
-    </DemoCRMLayout>
+    </>
   );
 }

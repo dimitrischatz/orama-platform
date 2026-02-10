@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useCRM } from '../context/CRMContext';
-import { DemoCRMLayout } from '../DemoCRMLayout';
 import type { Company } from '../types';
 
 export function CompaniesPage() {
@@ -49,7 +48,7 @@ export function CompaniesPage() {
   };
 
   return (
-    <DemoCRMLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -228,6 +227,6 @@ export function CompaniesPage() {
           </div>
         </div>
       )}
-    </DemoCRMLayout>
+    </>
   );
 }
