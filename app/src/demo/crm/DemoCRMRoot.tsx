@@ -87,7 +87,7 @@ export function DemoCRMRoot({ children }: DemoCRMRootProps) {
     <OramaProvider
       config={{
         apiKey: import.meta.env.REACT_APP_ORAMA_API_KEY,
-        projectId: '52d071f6-c3b9-4fe5-b23b-de183e18da7f',
+        projectId: import.meta.env.REACT_APP_ORAMA_CRM_PROJECT_ID,
         apiUrl: import.meta.env.REACT_APP_ORAMA_API_URL,
       }}
     >
