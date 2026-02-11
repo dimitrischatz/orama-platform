@@ -82,6 +82,8 @@ interface DemoCRMRootProps {
 }
 
 export function DemoCRMRoot({ children }: DemoCRMRootProps) {
+  console.log('[CRM] project_id:', import.meta.env.REACT_APP_CRM_PROJECT_ID);
+
   return (
 
     <OramaProvider
