@@ -82,16 +82,13 @@ interface DemoCRMRootProps {
 }
 
 export function DemoCRMRoot({ children }: DemoCRMRootProps) {
-  console.log('[CRM] project_id:', import.meta.env.REACT_APP_CRM_AGENT_ID);
-  console.log('[CRM] api_key:', import.meta.env.REACT_APP_ORAMA_API_KEY);
-  console.log('[CRM] url:', import.meta.env.REACT_APP_ORAMA_API_URL);
 
   return (
 
     <OramaProvider
       config={{
         apiKey: import.meta.env.REACT_APP_ORAMA_API_KEY,
-        projectId: import.meta.env.REACT_APP_CRM_AGENT_ID,
+        projectId: import.meta.env.REACT_APP_CRM_PROJECT_ID,
         apiUrl: import.meta.env.REACT_APP_ORAMA_API_URL,
       }}
     >
