@@ -8,20 +8,22 @@ app OpenSaaS {
   head: [
     "<link rel='icon' href='/favicon.ico' />",
     "<meta charset='utf-8' />",
-    "<meta name='description' content='Your apps main description and features.' />",
-    "<meta name='author' content='Your (App) Name' />",
-    "<meta name='keywords' content='saas, solution, product, app, service' />",
+    "<meta name='description' content='Orama is an AI agent for your app — it reads your documentation, answers user questions, and automates workflows directly inside your product.' />",
+    "<meta name='author' content='Orama' />",
+    "<meta name='keywords' content='AI agent, in-app assistant, workflow automation, developer tools, documentation AI, product integration' />",
 
     "<meta property='og:type' content='website' />",
-    "<meta property='og:title' content='Your Open SaaS App' />",
-    "<meta property='og:site_name' content='Your Open SaaS App' />",
-    "<meta property='og:url' content='https://your-saas-app.com' />",
-    "<meta property='og:description' content='Your apps main description and features.' />",
-    "<meta property='og:image' content='https://your-saas-app.com/public-banner.webp' />",
-    "<meta name='twitter:image' content='https://your-saas-app.com/public-banner.webp' />",
-    "<meta name='twitter:image:width' content='800' />",
-    "<meta name='twitter:image:height' content='400' />",
-    "<meta name='twitter:card' content='summary_large_image' />",
+    "<meta property='og:title' content='Orama — AI Agent for Your App' />",
+    "<meta property='og:site_name' content='Orama' />",
+    "<meta property='og:url' content='https://orama.dev' />",
+    "<meta property='og:description' content='Add an AI agent to your app that understands your product, answers questions, and automates user workflows.' />",
+    //"<meta property='og:image' content='https://orama.dev/og-image.png' />",
+
+    // "<meta property='og:image' content='https://your-saas-app.com/public-banner.webp' />",
+    // "<meta name='twitter:image' content='https://your-saas-app.com/public-banner.webp' />",
+    // "<meta name='twitter:image:width' content='800' />",
+    // "<meta name='twitter:image:height' content='400' />",
+    // "<meta name='twitter:card' content='summary_large_image' />",
     // TODO: You can put your Plausible analytics scripts below (https://docs.opensaas.sh/guides/analytics/):
     // NOTE: Plausible does not use Cookies, so you can simply add the scripts here.
     // Google, on the other hand, does, so you must instead add the script dynamically
