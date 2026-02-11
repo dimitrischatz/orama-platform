@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import type { Project, Prompt, DocSource, ApiKey, UsageRecord } from "wasp/entities";
+import type { Project, Prompt, ApiKey, UsageRecord } from "wasp/entities";
 import { HttpError } from "wasp/server";
 import type {
   GetProjects,
@@ -9,8 +9,6 @@ import type {
   CreateProject,
   UpdateProject,
   DeleteProject,
-  AddDocSource,
-  RemoveDocSource,
   CreatePrompt,
   UpdatePrompt,
   DeletePrompt,
@@ -46,7 +44,6 @@ type GetProjectByIdInput = z.infer<typeof getProjectByIdSchema>;
 
 type ProjectWithRelations = Project & {
   prompts: Prompt[];
-  docSources: DocSource[];
 };
 
 export const getProjectById: GetProjectById<
@@ -61,7 +58,7 @@ export const getProjectById: GetProjectById<
 
   const project = await context.entities.Project.findUnique({
     where: { id, userId: context.user.id },
-    include: { prompts: true, docSources: true },
+    include: { prompts: true },
   });
 
   if (!project) {
@@ -97,8 +94,7 @@ type DailyProjectUsage = {
   projectId: string;
   projectName: string;
   requests: number;
-  promptTokens: number;
-  completionTokens: number;
+  cost: number;
 };
 
 export const getProjectUsage: GetProjectUsage<
@@ -141,16 +137,14 @@ export const getProjectUsage: GetProjectUsage<
     const existing = byKey.get(key);
     if (existing) {
       existing.requests += 1;
-      existing.promptTokens += r.promptTokens;
-      existing.completionTokens += r.completionTokens;
+      existing.cost += r.cost;
     } else {
       byKey.set(key, {
         date,
         projectId: r.projectId,
         projectName: r.project.name,
         requests: 1,
-        promptTokens: r.promptTokens,
-        completionTokens: r.completionTokens,
+        cost: r.cost,
       });
     }
   }
@@ -235,71 +229,6 @@ export const deleteProject: DeleteProject<DeleteProjectInput, Project> = async (
   return context.entities.Project.delete({
     where: { id, userId: context.user.id },
   });
-};
-
-// ─── DocSource Actions ──────────────────────────────────────────────────────
-
-const addDocSourceSchema = z.object({
-  projectId: z.string(),
-  url: z.string().url(),
-  label: z.string().optional(),
-  type: z.string().default("docs"),
-});
-
-type AddDocSourceInput = z.infer<typeof addDocSourceSchema>;
-
-export const addDocSource: AddDocSource<AddDocSourceInput, DocSource> = async (
-  rawArgs,
-  context,
-) => {
-  if (!context.user) {
-    throw new HttpError(401);
-  }
-
-  const { projectId, url, label, type } = ensureArgsSchemaOrThrowHttpError(
-    addDocSourceSchema,
-    rawArgs,
-  );
-
-  return context.entities.DocSource.create({
-    data: {
-      url,
-      label,
-      type,
-      project: { connect: { id: projectId } },
-    },
-  });
-};
-
-const removeDocSourceSchema = z.object({
-  id: z.string(),
-});
-
-type RemoveDocSourceInput = z.infer<typeof removeDocSourceSchema>;
-
-export const removeDocSource: RemoveDocSource<
-  RemoveDocSourceInput,
-  DocSource
-> = async (rawArgs, context) => {
-  if (!context.user) {
-    throw new HttpError(401);
-  }
-
-  const { id } = ensureArgsSchemaOrThrowHttpError(
-    removeDocSourceSchema,
-    rawArgs,
-  );
-
-  // Ensure the doc source belongs to a project owned by this user
-  const docSource = await context.entities.DocSource.findFirst({
-    where: { id, project: { userId: context.user.id } },
-  });
-
-  if (!docSource) {
-    throw new HttpError(404, "Doc source not found");
-  }
-
-  return context.entities.DocSource.delete({ where: { id } });
 };
 
 // ─── Prompt Actions ─────────────────────────────────────────────────────────

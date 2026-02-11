@@ -80,8 +80,8 @@ export function DemoStoreRoot({ children }: DemoStoreRootProps) {
     <OramaProvider
       config={{
         apiKey: import.meta.env.REACT_APP_ORAMA_API_KEY,
-        apiUrl:import.meta.env.REACT_APP_ORAMA_API_URL,
-        systemPrompt: ECOMMERCE_SYSTEM_PROMPT,
+        projectId: import.meta.env.REACT_APP_ORAMA_STORE_PROJECT_ID,
+        apiUrl: import.meta.env.REACT_APP_ORAMA_API_URL,
       }}
     >
       <StoreProvider>

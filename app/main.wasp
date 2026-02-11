@@ -3,7 +3,7 @@ app OpenSaaS {
     version: "^0.20.0"
   },
 
-  title: "My Open SaaS App",
+  title: "Orama",
 
   head: [
     "<link rel='icon' href='/favicon.ico' />",
@@ -68,7 +68,7 @@ app OpenSaaS {
       // }
     },
     onAuthFailedRedirectTo: "/login",
-    onAuthSucceededRedirectTo: "/dashboard",
+    onAuthSucceededRedirectTo: "/",
   },
 
   db: {
@@ -96,9 +96,10 @@ app OpenSaaS {
   },
 }
 
-route LandingPageRoute { path: "/", to: LandingPage }
-page LandingPage {
-  component: import LandingPage from "@src/landing-page/LandingPage"
+route DashboardRoute { path: "/", to: DashboardPage }
+page DashboardPage {
+  authRequired: true,
+  component: import DashboardPage from "@src/platform/DashboardPage"
 }
 
 //#region Auth Pages
@@ -278,31 +279,26 @@ page AdminMessagesPage {
 //#endregion
 
 //#region Platform Dashboard
-route DashboardRoute { path: "/dashboard", to: DashboardPage }
-page DashboardPage {
-  authRequired: true,
-  component: import DashboardPage from "@src/platform/DashboardPage"
-}
 
-route NewProjectRoute { path: "/dashboard/projects/new", to: NewProjectPage }
+route NewProjectRoute { path: "/projects/new", to: NewProjectPage }
 page NewProjectPage {
   authRequired: true,
   component: import NewProjectPage from "@src/platform/NewProjectPage"
 }
 
-route ProjectDetailRoute { path: "/dashboard/projects/:id", to: ProjectDetailPage }
+route ProjectDetailRoute { path: "/projects/:id", to: ProjectDetailPage }
 page ProjectDetailPage {
   authRequired: true,
   component: import ProjectDetailPage from "@src/platform/ProjectDetailPage"
 }
 
-route UsageRoute { path: "/dashboard/usage", to: UsagePage }
+route UsageRoute { path: "/usage", to: UsagePage }
 page UsagePage {
   authRequired: true,
   component: import UsagePage from "@src/platform/UsagePage"
 }
 
-route ApiKeysRoute { path: "/dashboard/keys", to: ApiKeysPage }
+route ApiKeysRoute { path: "/keys", to: ApiKeysPage }
 page ApiKeysPage {
   authRequired: true,
   component: import ApiKeysPage from "@src/platform/ApiKeysPage"
@@ -316,7 +312,7 @@ query getProjects {
 
 query getProjectById {
   fn: import { getProjectById } from "@src/platform/operations",
-  entities: [Project, Prompt, DocSource]
+  entities: [Project, Prompt]
 }
 
 query getApiKeys {
@@ -343,17 +339,6 @@ action updateProject {
 action deleteProject {
   fn: import { deleteProject } from "@src/platform/operations",
   entities: [Project]
-}
-
-// DocSource actions
-action addDocSource {
-  fn: import { addDocSource } from "@src/platform/operations",
-  entities: [DocSource]
-}
-
-action removeDocSource {
-  fn: import { removeDocSource } from "@src/platform/operations",
-  entities: [DocSource]
 }
 
 // Prompt actions

@@ -9,19 +9,19 @@ const navItems = [
     label: "Projects",
     to: routes.DashboardRoute.to,
     icon: FolderKanban,
-    match: "/dashboard",
+    match: "/",
   },
   {
     label: "Usage",
     to: routes.UsageRoute.to,
     icon: BarChart3,
-    match: "/dashboard/usage",
+    match: "/usage",
   },
   {
     label: "API Keys",
     to: routes.ApiKeysRoute.to,
     icon: Key,
-    match: "/dashboard/keys",
+    match: "/keys",
   },
 ];
 
@@ -30,10 +30,10 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const { data: user } = useAuth();
 
   const isActive = (item: (typeof navItems)[0]) => {
-    if (item.match === "/dashboard") {
+    if (item.match === "/") {
       return (
-        location.pathname === "/dashboard" ||
-        location.pathname.startsWith("/dashboard/projects")
+        location.pathname === "/" ||
+        location.pathname.startsWith("/projects")
       );
     }
     return location.pathname.startsWith(item.match);

@@ -23,7 +23,7 @@ export default function NewProjectPage(_props: { user: User }) {
         description: description.trim() || undefined,
       });
       toast({ title: "Project created" });
-      navigate(`/dashboard/projects/${project.id}`);
+      navigate(`/projects/${project.id}`);
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
@@ -34,7 +34,7 @@ export default function NewProjectPage(_props: { user: User }) {
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-10">
       <button
-        onClick={() => navigate("/dashboard")}
+        onClick={() => navigate("/")}
         className="mb-8 inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-white"
       >
         <ArrowLeft className="h-4 w-4" />

@@ -122,7 +122,6 @@ model Project {
   userId      String
 
   prompts      Prompt[]
-  docSources   DocSource[]
   usageRecords UsageRecord[]
 }
 
@@ -138,26 +137,23 @@ model Prompt {
   projectId   String
 }
 
-model DocSource {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  url       String
-  label     String?
-  type      String   @default("docs") // "docs", "sitemap", "api", etc.
-
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId String
-}
-
 model UsageRecord {
   id               String   @id @default(uuid())
   createdAt        DateTime @default(now())
   model            String
   promptTokens     Int
   completionTokens Int
+  cost             Float    @default(0)
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId String
+}
+
+model ModelPricing {
+  id                 String   @id @default(uuid())
+  model              String   @unique
+  inputPricePerMil   Float    // price per 1M input tokens
+  outputPricePerMil  Float    // price per 1M output tokens
 }
 
 model ApiKey {

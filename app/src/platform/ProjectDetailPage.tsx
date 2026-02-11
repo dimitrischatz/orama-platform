@@ -7,22 +7,18 @@ import {
   createPrompt,
   updatePrompt,
   deletePrompt,
-  addDocSource,
-  removeDocSource,
   generateSkillsFromDocs,
   useQuery,
 } from "wasp/client/operations";
-import type { User, Prompt, DocSource } from "wasp/entities";
+import type { User, Prompt } from "wasp/entities";
 import {
   ArrowLeft,
   Save,
   Trash2,
   Plus,
   Pencil,
-  X,
   FileText,
   Sparkles,
-  Globe,
   Loader2,
   Wand2,
   Code2,
@@ -85,7 +81,7 @@ export default function ProjectDetailPage(_props: { user: User }) {
       <div className="p-6 lg:p-10">
         <p className="text-sm text-red-500">Project not found</p>
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/")}
           className="mt-4 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
         >
           Back to Dashboard
@@ -102,7 +98,7 @@ export default function ProjectDetailPage(_props: { user: User }) {
     try {
       await deleteProject({ id: project.id });
       toast({ title: "Project deleted" });
-      navigate("/dashboard");
+      navigate("/");
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
@@ -112,7 +108,7 @@ export default function ProjectDetailPage(_props: { user: User }) {
     <div className="mx-auto max-w-5xl p-6 lg:p-10">
       <div className="mb-8 flex items-center justify-between">
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={() => navigate("/")}
           className="inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -131,10 +127,6 @@ export default function ProjectDetailPage(_props: { user: User }) {
         <ProjectSettingsSection project={project} />
         <BasePromptSection projectId={project.id} basePrompt={basePrompt} />
         <SkillsSection projectId={project.id} skills={skills} />
-        <DocSourcesSection
-          projectId={project.id}
-          docSources={project.docSources}
-        />
         <IntegrationSection projectId={project.id} />
       </div>
     </div>
@@ -610,187 +602,6 @@ function GenerateSkillsForm({
   );
 }
 
-// ─── Doc Sources ────────────────────────────────────────────────────────────
-
-function DocSourcesSection({
-  projectId,
-  docSources,
-}: {
-  projectId: string;
-  docSources: DocSource[];
-}) {
-  const [dialogOpen, setDialogOpen] = useState(false);
-
-  return (
-    <div className={sectionCard + " p-6"}>
-      <div className="mb-1 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-orange-500" />
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
-            Doc Sources
-          </h2>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <button className={btnOutline}>
-              <Plus className="h-4 w-4" />
-              Add Source
-            </button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Doc Source</DialogTitle>
-            </DialogHeader>
-            <DocSourceForm
-              projectId={projectId}
-              onDone={() => setDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
-      </div>
-      <p className="mb-6 text-sm text-zinc-500">
-        Documentation URLs the agent will index and use for answers.
-      </p>
-
-      {!docSources.length ? (
-        <p className="py-6 text-center text-sm text-zinc-400">
-          No doc sources yet
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {docSources.map((ds) => (
-            <DocSourceRow key={ds.id} docSource={ds} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DocSourceRow({ docSource }: { docSource: DocSource }) {
-  const { toast } = useToast();
-
-  const handleRemove = async () => {
-    try {
-      await removeDocSource({ id: docSource.id });
-      toast({ title: "Doc source removed" });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
-  };
-
-  return (
-    <div className="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/30">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-medium text-zinc-900 dark:text-white">
-            {docSource.label || docSource.url}
-          </p>
-          <span className="shrink-0 rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
-            {docSource.type}
-          </span>
-        </div>
-        {docSource.label && (
-          <p className="mt-1 truncate text-xs text-zinc-400">{docSource.url}</p>
-        )}
-      </div>
-      <button
-        onClick={handleRemove}
-        className="ml-4 rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  );
-}
-
-function DocSourceForm({
-  projectId,
-  onDone,
-}: {
-  projectId: string;
-  onDone: () => void;
-}) {
-  const [url, setUrl] = useState("");
-  const [label, setLabel] = useState("");
-  const [type, setType] = useState("docs");
-  const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await addDocSource({
-        projectId,
-        url,
-        label: label || undefined,
-        type,
-      });
-      toast({ title: "Doc source added" });
-      onDone();
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-4">
-      <div>
-        <label htmlFor="ds-url" className={labelClass}>
-          URL
-        </label>
-        <input
-          id="ds-url"
-          type="url"
-          placeholder="https://docs.example.com"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          required
-          className={inputClass}
-        />
-      </div>
-      <div>
-        <label htmlFor="ds-label" className={labelClass}>
-          Label{" "}
-          <span className="font-normal text-zinc-400">(optional)</span>
-        </label>
-        <input
-          id="ds-label"
-          placeholder="e.g. API Reference"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          className={inputClass}
-        />
-      </div>
-      <div>
-        <label htmlFor="ds-type" className={labelClass}>
-          Type
-        </label>
-        <select
-          id="ds-type"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          className={inputClass}
-        >
-          <option value="docs">Docs</option>
-          <option value="sitemap">Sitemap</option>
-          <option value="api">API</option>
-        </select>
-      </div>
-      <button
-        type="submit"
-        disabled={saving || !url.trim()}
-        className={btnPrimary}
-      >
-        {saving ? "Adding..." : "Add Source"}
-      </button>
-    </form>
-  );
-}
-
 // ─── Integration Guide ──────────────────────────────────────────────────────
 
 function CodeBlock({ code, language = "tsx" }: { code: string; language?: string }) {
@@ -850,8 +661,8 @@ function App() {
     <OramaProvider
       config={{
         apiKey: import.meta.env.REACT_APP_ORAMA_API_KEY,
+        projectId: '${projectId}',
         apiUrl: import.meta.env.REACT_APP_ORAMA_API_URL,
-        systemPrompt: \`You are a helpful assistant...\`,
       }}
     >
       {/* Your app components */}
@@ -871,6 +682,14 @@ function App() {
         Add the Orama agent to your React application in two steps.
       </p>
 
+      {/* Project ID */}
+      <div className="mb-6 flex items-center gap-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 px-4 py-3">
+        <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Project ID</span>
+        <code className="flex-1 rounded bg-zinc-100 dark:bg-zinc-800 px-2 py-1 text-xs font-mono text-zinc-700 dark:text-zinc-300 select-all">
+          {projectId}
+        </code>
+      </div>
+
       <div className="flex flex-col gap-6">
         {/* Step 1 */}
         <div>
@@ -886,7 +705,7 @@ function App() {
             2. Wrap your app with OramaProvider
           </h3>
           <p className="mb-3 text-sm text-zinc-500">
-            Add the <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">OramaProvider</code> at the root of your component tree. The system prompt you configured in the Base Prompt section above will define your agent's behavior.
+            Add the <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">OramaProvider</code> at the root of your component tree. The base prompt and skills you configured above will be loaded automatically from the project.
           </p>
           <CodeBlock code={providerSnippet} language="tsx" />
         </div>

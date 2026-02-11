@@ -58,7 +58,7 @@ function ProjectsSection() {
           {projects.map((project) => (
             <Link
               key={project.id}
-              to={`/dashboard/projects/${project.id}`}
+              to={`/projects/${project.id}`}
               className="group block"
             >
               <div className="rounded-2xl border border-zinc-200 bg-white p-6 transition-all hover:border-orange-300 hover:shadow-md dark:border-zinc-700 dark:bg-zinc-800/50 dark:hover:border-orange-500/30">

@@ -32,6 +32,10 @@ const PROJECT_COLORS_TEXT = [
   "text-rose-500",
 ];
 
+function formatCost(cost: number): string {
+  return `$${cost.toFixed(2)}`;
+}
+
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export default function UsagePage(_props: { user: User }) {
@@ -53,7 +57,7 @@ export default function UsagePage(_props: { user: User }) {
         Usage
       </h1>
       <p className="mb-8 text-sm text-zinc-500">
-        Token usage across your projects
+        Usage and costs across your projects
       </p>
 
       <UsageFilter
@@ -95,9 +99,10 @@ type DailyProjectUsage = {
   projectId: string;
   projectName: string;
   requests: number;
-  promptTokens: number;
-  completionTokens: number;
+  cost: number;
 };
+
+type ChartMode = "cost" | "responses";
 
 function UsageContent({
   usage,
@@ -110,57 +115,84 @@ function UsageContent({
   projectColorMap: Map<string, number>;
   filterProjectId: string;
 }) {
+  const [chartMode, setChartMode] = useState<ChartMode>("cost");
+
   const totals = usage.reduce(
     (acc, row) => ({
       requests: acc.requests + row.requests,
-      promptTokens: acc.promptTokens + row.promptTokens,
-      completionTokens: acc.completionTokens + row.completionTokens,
+      cost: acc.cost + row.cost,
     }),
-    { requests: 0, promptTokens: 0, completionTokens: 0 },
+    { requests: 0, cost: 0 },
   );
 
   // Group by date for the bar chart, stacking projects
   const dates = [...new Set(usage.map((r) => r.date))].sort();
-  const maxTokens = Math.max(
-    ...dates.map((d) =>
-      usage
-        .filter((r) => r.date === d)
-        .reduce((sum, r) => sum + r.promptTokens + r.completionTokens, 0),
-    ),
+
+  const getDayValue = (dayRows: DailyProjectUsage[]) =>
+    dayRows.reduce((sum, r) => sum + (chartMode === "cost" ? r.cost : r.requests), 0);
+
+  const getRowValue = (row: DailyProjectUsage) =>
+    chartMode === "cost" ? row.cost : row.requests;
+
+  const maxValue = Math.max(
+    ...dates.map((d) => getDayValue(usage.filter((r) => r.date === d))),
   );
+
+  const formatValue = (v: number) =>
+    chartMode === "cost" ? formatCost(v) : v.toLocaleString();
 
   return (
     <div className="mt-6 flex flex-col gap-6">
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Total Requests" value={totals.requests.toLocaleString()} />
-        <StatCard label="Prompt Tokens" value={totals.promptTokens.toLocaleString()} />
-        <StatCard label="Completion Tokens" value={totals.completionTokens.toLocaleString()} />
+      <div className="grid grid-cols-2 gap-4">
+        <StatCard label="Total Responses" value={totals.requests.toLocaleString()} />
+        <StatCard label="Total Cost" value={formatCost(totals.cost)} />
       </div>
 
       {/* Bar chart */}
       <div className={sectionCard + " p-6"}>
-        <h3 className="mb-4 text-sm font-medium text-zinc-900 dark:text-white">
-          Daily Token Usage
-        </h3>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-medium text-zinc-900 dark:text-white">
+            {chartMode === "cost" ? "Daily Cost" : "Daily Responses"}
+          </h3>
+          <div className="flex rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <button
+              onClick={() => setChartMode("cost")}
+              className={`rounded-l-lg px-3 py-1 text-xs font-medium transition-colors ${
+                chartMode === "cost"
+                  ? "bg-orange-500 text-white"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+              }`}
+            >
+              Cost
+            </button>
+            <button
+              onClick={() => setChartMode("responses")}
+              className={`rounded-r-lg px-3 py-1 text-xs font-medium transition-colors ${
+                chartMode === "responses"
+                  ? "bg-orange-500 text-white"
+                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+              }`}
+            >
+              Responses
+            </button>
+          </div>
+        </div>
         <div className="flex items-end gap-2" style={{ height: 200 }}>
           {dates.map((date) => {
             const dayRows = usage.filter((r) => r.date === date);
-            const dayTotal = dayRows.reduce(
-              (sum, r) => sum + r.promptTokens + r.completionTokens,
-              0,
-            );
-            const heightPct = maxTokens > 0 ? (dayTotal / maxTokens) * 100 : 0;
+            const dayTotal = getDayValue(dayRows);
+            const heightPct = maxValue > 0 ? (dayTotal / maxValue) * 100 : 0;
 
             return (
               <div
                 key={date}
-                className="group relative flex flex-1 flex-col items-stretch justify-end"
-                style={{ height: "100%" }}
+                className="group relative flex flex-col items-stretch justify-end"
+                style={{ height: "100%", flex: "1 1 0%", maxWidth: 64 }}
               >
                 {/* Tooltip */}
                 <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-2 py-1 text-xs text-white group-hover:block dark:bg-zinc-600">
-                  {dayTotal.toLocaleString()} tokens
+                  {formatValue(dayTotal)}
                 </div>
                 {/* Stacked bar */}
                 <div
@@ -168,14 +200,14 @@ function UsageContent({
                   style={{ height: `${heightPct}%`, minHeight: dayTotal > 0 ? 4 : 0 }}
                 >
                   {dayRows.map((row) => {
-                    const rowTokens = row.promptTokens + row.completionTokens;
-                    const rowPct = dayTotal > 0 ? (rowTokens / dayTotal) * 100 : 0;
+                    const rowVal = getRowValue(row);
+                    const rowPct = dayTotal > 0 ? (rowVal / dayTotal) * 100 : 0;
                     const colorIdx = projectColorMap.get(row.projectId) ?? 0;
                     return (
                       <div
                         key={row.projectId}
                         className={`${PROJECT_COLORS[colorIdx]} w-full`}
-                        style={{ height: `${rowPct}%`, minHeight: rowTokens > 0 ? 2 : 0 }}
+                        style={{ height: `${rowPct}%`, minHeight: rowVal > 0 ? 2 : 0 }}
                       />
                     );
                   })}
@@ -212,9 +244,8 @@ function UsageContent({
             <tr className="border-b border-zinc-200 dark:border-zinc-700">
               <th className="px-6 py-3 font-medium text-zinc-500">Date</th>
               <th className="px-6 py-3 font-medium text-zinc-500">Project</th>
-              <th className="px-6 py-3 text-right font-medium text-zinc-500">Requests</th>
-              <th className="px-6 py-3 text-right font-medium text-zinc-500">Prompt Tokens</th>
-              <th className="px-6 py-3 text-right font-medium text-zinc-500">Completion Tokens</th>
+              <th className="px-6 py-3 text-right font-medium text-zinc-500">Responses</th>
+              <th className="px-6 py-3 text-right font-medium text-zinc-500">Cost</th>
             </tr>
           </thead>
           <tbody>
@@ -235,10 +266,7 @@ function UsageContent({
                     {row.requests.toLocaleString()}
                   </td>
                   <td className="px-6 py-3 text-right text-zinc-600 dark:text-zinc-300">
-                    {row.promptTokens.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-3 text-right text-zinc-600 dark:text-zinc-300">
-                    {row.completionTokens.toLocaleString()}
+                    {formatCost(row.cost)}
                   </td>
                 </tr>
               );

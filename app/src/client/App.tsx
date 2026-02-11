@@ -17,13 +17,16 @@ export default function App() {
   const location = useLocation();
 
   const isMarketingPage = useMemo(() => {
-    return (
-      location.pathname === "/" || location.pathname.startsWith("/pricing")
-    );
+    return location.pathname.startsWith("/pricing");
   }, [location]);
 
   const isDashboard = useMemo(() => {
-    return location.pathname.startsWith("/dashboard");
+    return (
+      location.pathname === "/" ||
+      location.pathname.startsWith("/projects") ||
+      location.pathname.startsWith("/usage") ||
+      location.pathname.startsWith("/keys")
+    );
   }, [location]);
 
   const isAdminDashboard = useMemo(() => {
