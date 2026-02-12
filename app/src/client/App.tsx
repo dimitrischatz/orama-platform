@@ -25,7 +25,8 @@ export default function App() {
       location.pathname === "/" ||
       location.pathname.startsWith("/projects") ||
       location.pathname.startsWith("/usage") ||
-      location.pathname.startsWith("/keys")
+      location.pathname.startsWith("/keys") ||
+      location.pathname.startsWith("/account")
     );
   }, [location]);
 

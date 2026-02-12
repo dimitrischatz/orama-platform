@@ -2,6 +2,7 @@ import { type Prisma } from "@prisma/client";
 import { type User } from "wasp/entities";
 import { HttpError, prisma } from "wasp/server";
 import {
+  type DeleteAccount,
   type GetPaginatedUsers,
   type UpdateIsUserAdminById,
 } from "wasp/server/operations";
@@ -156,4 +157,38 @@ export const getPaginatedUsers: GetPaginatedUsers<
     users: pageOfUsers,
     totalPages,
   };
+};
+
+export const deleteAccount: DeleteAccount<void, void> = async (
+  _args,
+  context,
+) => {
+  if (!context.user) {
+    throw new HttpError(401, "Not authenticated");
+  }
+
+  const userId = context.user.id;
+
+  // Get all project IDs so we can delete their child records
+  const projects = await context.entities.Project.findMany({
+    where: { userId },
+    select: { id: true },
+  });
+  const projectIds = projects.map((p) => p.id);
+
+  await prisma.$transaction([
+    // Delete project children (UsageRecord and Prompt cascade via schema,
+    // but we delete explicitly to be safe since User->Project doesn't cascade)
+    prisma.usageRecord.deleteMany({ where: { projectId: { in: projectIds } } }),
+    prisma.prompt.deleteMany({ where: { projectId: { in: projectIds } } }),
+    // Delete user's direct relations
+    prisma.project.deleteMany({ where: { userId } }),
+    prisma.apiKey.deleteMany({ where: { userId } }),
+    prisma.gptResponse.deleteMany({ where: { userId } }),
+    prisma.task.deleteMany({ where: { userId } }),
+    prisma.file.deleteMany({ where: { userId } }),
+    prisma.contactFormMessage.deleteMany({ where: { userId } }),
+    // Delete the user (Wasp Auth/Session tables cascade automatically)
+    prisma.user.delete({ where: { id: userId } }),
+  ]);
 };

@@ -147,6 +147,11 @@ action updateIsUserAdminById {
   fn: import { updateIsUserAdminById } from "@src/user/operations",
   entities: [User]
 }
+
+action deleteAccount {
+  fn: import { deleteAccount } from "@src/user/operations",
+  entities: [User, Project, ApiKey, GptResponse, Task, File, ContactFormMessage]
+}
 //#endregion
 
 //#region Payment
