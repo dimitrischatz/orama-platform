@@ -24,6 +24,7 @@ import {
   Code2,
   Copy,
   Check,
+  Brain,
 } from "lucide-react";
 import {
   Dialog,
@@ -92,6 +93,7 @@ export default function ProjectDetailPage(_props: { user: User }) {
 
   const basePrompt = project.prompts.find((p) => p.type === "base");
   const skills = project.prompts.filter((p) => p.type === "skill");
+  const memories = project.prompts.filter((p) => p.type === "memory");
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this project?")) return;
@@ -127,6 +129,7 @@ export default function ProjectDetailPage(_props: { user: User }) {
         <ProjectSettingsSection project={project} />
         <BasePromptSection projectId={project.id} basePrompt={basePrompt} />
         <SkillsSection projectId={project.id} skills={skills} />
+        <MemoriesSection memories={memories} />
         <IntegrationSection projectId={project.id} />
       </div>
     </div>
@@ -602,6 +605,111 @@ function GenerateSkillsForm({
   );
 }
 
+// ─── Memories ────────────────────────────────────────────────────────────────
+
+function MemoriesSection({ memories }: { memories: Prompt[] }) {
+  const { toast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deletePrompt({ id });
+      toast({ title: "Memory deleted" });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleUpdate = async (id: string) => {
+    try {
+      await updatePrompt({ id, content: editContent });
+      toast({ title: "Memory updated" });
+      setEditingId(null);
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className={sectionCard + " p-6"}>
+      <div className="mb-1 flex items-center gap-2">
+        <Brain className="h-5 w-5 text-orange-500" />
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+          Memories
+        </h2>
+      </div>
+      <p className="mb-6 text-sm text-zinc-500">
+        Lessons the agent has learned from previous sessions. These are automatically saved and used to improve future performance.
+      </p>
+
+      {!memories.length ? (
+        <p className="py-6 text-center text-sm text-zinc-400">
+          No memories yet — the agent will save lessons as it works.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {memories.map((m) => (
+            <div
+              key={m.id}
+              className="flex items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800/30"
+            >
+              {editingId === m.id ? (
+                <div className="flex flex-1 flex-col gap-2">
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    rows={2}
+                    className={inputClass + " text-xs"}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleUpdate(m.id)}
+                      disabled={!editContent.trim()}
+                      className="rounded-md bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="rounded-md px-3 py-1 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="flex-1 text-sm text-zinc-700 dark:text-zinc-300">
+                    {m.content}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        setEditingId(m.id);
+                        setEditContent(m.content);
+                      }}
+                      className={btnGhost}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(m.id)}
+                      className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Integration Guide ──────────────────────────────────────────────────────
 
 function CodeBlock({ code, language = "tsx" }: { code: string; language?: string }) {
@@ -652,23 +760,39 @@ function CodeBlock({ code, language = "tsx" }: { code: string; language?: string
 }
 
 function IntegrationSection({ projectId }: { projectId: string }) {
-  const installSnippet = `npm install @orama/agent`;
+  const [tab, setTab] = useState<"npm" | "script">("npm");
 
-  const providerSnippet = `import { OramaProvider } from '@orama/agent';
+  const installSnippet = `npm install @orama-agent/sdk`;
+
+  const providerSnippet = `import { OramaProvider } from '@orama-agent/sdk';
 
 function App() {
   return (
     <OramaProvider
       config={{
-        apiKey: import.meta.env.REACT_APP_ORAMA_API_KEY,
+        apiKey: 'YOUR_API_KEY',
         projectId: '${projectId}',
-        apiUrl: import.meta.env.REACT_APP_ORAMA_API_URL,
+        apiUrl: 'https://api.orama.dev',
       }}
     >
       {/* Your app components */}
     </OramaProvider>
   );
 }`;
+
+  const scriptSnippet = `<script
+  src="https://api.orama.dev/static/orama-widget.js"
+  data-api-key="YOUR_API_KEY"
+  data-project-id="${projectId}"
+  data-api-url="https://api.orama.dev"
+><\/script>`;
+
+  const tabClass = (active: boolean) =>
+    `rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+      active
+        ? "bg-orange-500 text-white"
+        : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+    }`;
 
   return (
     <div className={sectionCard + " p-6"}>
@@ -679,7 +803,7 @@ function App() {
         </h2>
       </div>
       <p className="mb-6 text-sm text-zinc-500">
-        Add the Orama agent to your React application in two steps.
+        Add the Orama agent to your application.
       </p>
 
       {/* Project ID */}
@@ -690,26 +814,45 @@ function App() {
         </code>
       </div>
 
-      <div className="flex flex-col gap-6">
-        {/* Step 1 */}
-        <div>
-          <h3 className="mb-2 text-sm font-medium text-zinc-900 dark:text-zinc-200">
-            1. Install the package
-          </h3>
-          <CodeBlock code={installSnippet} language="bash" />
-        </div>
-
-        {/* Step 2 */}
-        <div>
-          <h3 className="mb-2 text-sm font-medium text-zinc-900 dark:text-zinc-200">
-            2. Wrap your app with OramaProvider
-          </h3>
-          <p className="mb-3 text-sm text-zinc-500">
-            Add the <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">OramaProvider</code> at the root of your component tree. The base prompt and skills you configured above will be loaded automatically from the project.
-          </p>
-          <CodeBlock code={providerSnippet} language="tsx" />
-        </div>
+      {/* Tabs */}
+      <div className="mb-6 flex gap-1 rounded-full border border-zinc-200 dark:border-zinc-700 p-1 w-fit">
+        <button className={tabClass(tab === "npm")} onClick={() => setTab("npm")}>
+          npm Package
+        </button>
+        <button className={tabClass(tab === "script")} onClick={() => setTab("script")}>
+          Script Tag
+        </button>
       </div>
+
+      {tab === "npm" ? (
+        <div className="flex flex-col gap-6">
+          <div>
+            <h3 className="mb-2 text-sm font-medium text-zinc-900 dark:text-zinc-200">
+              1. Install the package
+            </h3>
+            <CodeBlock code={installSnippet} language="bash" />
+          </div>
+          <div>
+            <h3 className="mb-2 text-sm font-medium text-zinc-900 dark:text-zinc-200">
+              2. Wrap your app with OramaProvider
+            </h3>
+            <p className="mb-3 text-sm text-zinc-500">
+              Add the <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">OramaProvider</code> at the root of your component tree.
+            </p>
+            <CodeBlock code={providerSnippet} language="tsx" />
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-zinc-500">
+            Add this script tag to your HTML. The widget will appear automatically as a floating button.
+          </p>
+          <CodeBlock code={scriptSnippet} language="html" />
+          <p className="text-xs text-zinc-400">
+            Replace <code className="rounded bg-zinc-100 dark:bg-zinc-800 px-1 py-0.5 text-xs">YOUR_API_KEY</code> with your API key from the dashboard.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

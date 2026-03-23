@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { StoreProvider } from './context/StoreContext';
-import { OramaProvider } from '@orama/agent';
+import { OramaProvider } from '@orama-agent/sdk';
 
 const ECOMMERCE_SYSTEM_PROMPT = `You are a helpful e-commerce store assistant for a Shopify-like admin panel. You help store owners manage their online business.
 

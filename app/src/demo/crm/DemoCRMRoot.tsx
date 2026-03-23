@@ -1,6 +1,6 @@
 import React from 'react';
 import { CRMProvider } from './context/CRMContext';
-import { OramaProvider } from '@orama/agent';
+import { OramaProvider } from '@orama-agent/sdk';
 
 
 
