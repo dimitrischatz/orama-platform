@@ -55,5 +55,6 @@ function generateMockUserData(): MockUserData {
     subscriptionPlan: subscriptionStatus
       ? faker.helpers.arrayElement(getSubscriptionPaymentPlanIds())
       : null,
+    balance: 5.0,
   };
 }

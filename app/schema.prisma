@@ -21,6 +21,7 @@ model User {
   subscriptionPlan          String?         // 'hobby', 'pro'
   datePaid                  DateTime?
   credits                   Int             @default(3)
+  balance                   Float           @default(5.0)
 
   gptResponses              GptResponse[]
   contactFormMessages       ContactFormMessage[]
@@ -123,6 +124,7 @@ model Project {
 
   prompts      Prompt[]
   usageRecords UsageRecord[]
+  agentLogs    AgentLog[]
 }
 
 model Prompt {
@@ -164,4 +166,25 @@ model ApiKey {
 
   user      User     @relation(fields: [userId], references: [id])
   userId    String
+}
+
+model AgentLog {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+
+  sessionId   String              // groups steps within one agent run
+  step        Int                 // 1, 2, 3...
+  goal        String              // user's original task
+  pageUrl     String?             // current page URL
+  snapshotText String?            // TOON sent to model (nullable to save space)
+  actions     String?             // JSON array of actions the model returned
+  toolResults String?             // JSON of tool call results from widget
+  agentMessage String?            // final text response from model (if any)
+  inputTokens  Int     @default(0)
+  outputTokens Int     @default(0)
+  status      String   @default("ok") // "ok", "error", "stopped"
+  errorMessage String?
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
 }

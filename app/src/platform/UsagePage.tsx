@@ -38,7 +38,7 @@ function formatCost(cost: number): string {
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
-export default function UsagePage(_props: { user: User }) {
+export default function UsagePage({ user }: { user: User }) {
   const [filterProjectId, setFilterProjectId] = useState<string>("");
   const { data: projects } = useQuery(getProjects);
   const { data: usage, isLoading } = useQuery(getProjectUsage, {
@@ -71,14 +71,19 @@ export default function UsagePage(_props: { user: User }) {
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-orange-500" />
         </div>
       ) : !usage?.length ? (
-        <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800/50">
-          <BarChart3 className="mx-auto mb-4 h-10 w-10 text-zinc-400" />
-          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
-            No usage data yet
-          </p>
-          <p className="mt-1 text-sm text-zinc-400">
-            Usage will appear here once your API starts processing requests.
-          </p>
+        <div className="mt-6 flex flex-col gap-6">
+          <div className="grid grid-cols-1 gap-4">
+            <StatCard label="Balance" value={formatCost(user.balance ?? 0)} />
+          </div>
+          <div className="rounded-2xl border border-dashed border-zinc-300 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800/50">
+            <BarChart3 className="mx-auto mb-4 h-10 w-10 text-zinc-400" />
+            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              No usage data yet
+            </p>
+            <p className="mt-1 text-sm text-zinc-400">
+              Usage will appear here once your API starts processing requests.
+            </p>
+          </div>
         </div>
       ) : (
         <UsageContent
@@ -86,6 +91,7 @@ export default function UsagePage(_props: { user: User }) {
           projects={projects ?? []}
           projectColorMap={projectColorMap}
           filterProjectId={filterProjectId}
+          balance={user.balance ?? 0}
         />
       )}
     </div>
@@ -109,11 +115,13 @@ function UsageContent({
   projects,
   projectColorMap,
   filterProjectId,
+  balance,
 }: {
   usage: DailyProjectUsage[];
   projects: { id: string; name: string }[];
   projectColorMap: Map<string, number>;
   filterProjectId: string;
+  balance: number;
 }) {
   const [chartMode, setChartMode] = useState<ChartMode>("cost");
 
@@ -145,8 +153,8 @@ function UsageContent({
     <div className="mt-6 flex flex-col gap-6">
       {/* Summary stats */}
       <div className="grid grid-cols-2 gap-4">
+        <StatCard label="Balance" value={formatCost(balance)} />
         <StatCard label="Total Responses" value={totals.requests.toLocaleString()} />
-        <StatCard label="Total Cost" value={formatCost(totals.cost)} />
       </div>
 
       {/* Bar chart */}
