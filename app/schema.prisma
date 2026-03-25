@@ -140,22 +140,24 @@ model Prompt {
 }
 
 model UsageRecord {
-  id               String   @id @default(uuid())
-  createdAt        DateTime @default(now())
-  model            String
-  promptTokens     Int
-  completionTokens Int
-  cost             Float    @default(0)
+  id                 String   @id @default(uuid())
+  createdAt          DateTime @default(now())
+  model              String
+  promptTokens       Int
+  completionTokens   Int
+  cachedInputTokens  Int      @default(0)
+  cost               Float    @default(0)
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId String
 }
 
 model ModelPricing {
-  id                 String   @id @default(uuid())
-  model              String   @unique
-  inputPricePerMil   Float    // price per 1M input tokens
-  outputPricePerMil  Float    // price per 1M output tokens
+  id                      String   @id @default(uuid())
+  model                   String   @unique
+  inputPricePerMil        Float    // price per 1M input tokens
+  outputPricePerMil       Float    // price per 1M output tokens
+  cachedInputPricePerMil  Float    @default(0) // price per 1M cached input tokens (typically 1/10th of input)
 }
 
 model ApiKey {
