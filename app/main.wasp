@@ -311,6 +311,12 @@ page ApiKeysPage {
   component: import ApiKeysPage from "@src/platform/ApiKeysPage"
 }
 
+route DocsRoute { path: "/docs", to: DocsPage }
+page DocsPage {
+  authRequired: true,
+  component: import DocsPage from "@src/platform/DocsPage"
+}
+
 // Queries
 query getProjects {
   fn: import { getProjects } from "@src/platform/operations",

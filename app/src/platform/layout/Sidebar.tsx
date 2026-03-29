@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth, logout } from "wasp/client/auth";
 import { routes } from "wasp/client/router";
-import { FolderKanban, Key, BarChart3, LogOut, Settings, X } from "lucide-react";
+import { FolderKanban, Key, BarChart3, BookOpen, LogOut, Settings, X } from "lucide-react";
 import { cn } from "../../client/utils";
 
 const navItems = [
@@ -22,6 +22,12 @@ const navItems = [
     to: routes.ApiKeysRoute.to,
     icon: Key,
     match: "/keys",
+  },
+  {
+    label: "Docs",
+    to: routes.DocsRoute.to,
+    icon: BookOpen,
+    match: "/docs",
   },
 ];
 
