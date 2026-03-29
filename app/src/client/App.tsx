@@ -12,6 +12,7 @@ import CookieConsentBanner from "./components/cookie-consent/Banner";
 import { DashboardLayout } from "../platform/layout/DashboardLayout";
 import { DemoStoreRoot } from "../demo/store/DemoStoreRoot";
 import { DemoCRMRoot } from "../demo/crm/DemoCRMRoot";
+import { OramaProvider } from "@orama-agent/sdk";
 
 export default function App() {
   const location = useLocation();
@@ -78,7 +79,15 @@ export default function App() {
     <>
       <div className="bg-background text-foreground min-h-screen">
         {isDashboard ? (
-          <DashboardLayout />
+          <OramaProvider
+            config={{
+              apiKey: import.meta.env.REACT_APP_ORAMA_API_KEY,
+              projectId: import.meta.env.REACT_APP_ORAMA_PROJECT_ID,
+              apiUrl: import.meta.env.REACT_APP_ORAMA_API_URL,
+            }}
+          >
+            <DashboardLayout />
+          </OramaProvider>
         ) : isAdminDashboard ? (
           <Outlet />
         ) : (
