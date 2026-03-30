@@ -6,7 +6,7 @@ import { BarChart3 } from "lucide-react";
 // ─── Shared styles ──────────────────────────────────────────────────────────
 
 const sectionCard =
-  "rounded-2xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/50";
+  "rounded-2xl border border-white/[0.07] bg-[#111114]";
 
 // ─── Colors for per-project bars ────────────────────────────────────────────
 
@@ -53,7 +53,7 @@ export default function UsagePage({ user }: { user: User }) {
 
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-10">
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-white">
         Usage
       </h1>
       <p className="mb-8 text-sm text-zinc-500">
@@ -68,16 +68,16 @@ export default function UsagePage({ user }: { user: User }) {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-orange-500" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
         </div>
       ) : !usage?.length ? (
         <div className="mt-6 flex flex-col gap-6">
           <div className="grid grid-cols-1 gap-4">
             <StatCard label="Balance" value={formatCost(user.balance ?? 0)} />
           </div>
-          <div className="rounded-2xl border border-dashed border-zinc-300 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800/50">
+          <div className="rounded-2xl border border-dashed border-zinc-700 bg-[#111114] py-16 text-center">
             <BarChart3 className="mx-auto mb-4 h-10 w-10 text-zinc-400" />
-            <p className="text-sm font-medium text-zinc-600 dark:text-zinc-300">
+            <p className="text-sm font-medium text-zinc-300">
               No usage data yet
             </p>
             <p className="mt-1 text-sm text-zinc-400">
@@ -160,16 +160,16 @@ function UsageContent({
       {/* Bar chart */}
       <div className={sectionCard + " p-6"}>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-medium text-zinc-900 dark:text-white">
+          <h3 className="text-sm font-medium text-white">
             {chartMode === "cost" ? "Daily Cost" : "Daily Responses"}
           </h3>
-          <div className="flex rounded-lg border border-zinc-200 dark:border-zinc-700">
+          <div className="flex rounded-lg border border-white/[0.07]">
             <button
               onClick={() => setChartMode("cost")}
               className={`rounded-l-lg px-3 py-1 text-xs font-medium transition-colors ${
                 chartMode === "cost"
                   ? "bg-orange-500 text-white"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                  : "text-zinc-500 hover:text-white"
               }`}
             >
               Cost
@@ -179,7 +179,7 @@ function UsageContent({
               className={`rounded-r-lg px-3 py-1 text-xs font-medium transition-colors ${
                 chartMode === "responses"
                   ? "bg-orange-500 text-white"
-                  : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                  : "text-zinc-500 hover:text-white"
               }`}
             >
               Responses
@@ -199,7 +199,7 @@ function UsageContent({
                 style={{ height: "100%", flex: "1 1 0%", maxWidth: 64 }}
               >
                 {/* Tooltip */}
-                <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-2 py-1 text-xs text-white group-hover:block dark:bg-zinc-600">
+                <div className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-2 py-1 text-xs text-white group-hover:block bg-zinc-700">
                   {formatValue(dayTotal)}
                 </div>
                 {/* Stacked bar */}
@@ -249,7 +249,7 @@ function UsageContent({
       <div className={sectionCard + " overflow-hidden"}>
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-zinc-200 dark:border-zinc-700">
+            <tr className="border-b border-white/[0.07]">
               <th className="px-6 py-3 font-medium text-zinc-500">Date</th>
               <th className="px-6 py-3 font-medium text-zinc-500">Project</th>
               <th className="px-6 py-3 text-right font-medium text-zinc-500">Responses</th>
@@ -262,18 +262,18 @@ function UsageContent({
               return (
                 <tr
                   key={`${row.date}:${row.projectId}`}
-                  className="border-b border-zinc-100 last:border-0 dark:border-zinc-700/50"
+                  className="border-b border-zinc-100 last:border-0 border-white/[0.05]"
                 >
-                  <td className="px-6 py-3 text-zinc-900 dark:text-white">{row.date}</td>
+                  <td className="px-6 py-3 text-white">{row.date}</td>
                   <td className="px-6 py-3">
                     <span className={`text-sm font-medium ${PROJECT_COLORS_TEXT[colorIdx]}`}>
                       {row.projectName}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-right text-zinc-600 dark:text-zinc-300">
+                  <td className="px-6 py-3 text-right text-zinc-300">
                     {row.requests.toLocaleString()}
                   </td>
-                  <td className="px-6 py-3 text-right text-zinc-600 dark:text-zinc-300">
+                  <td className="px-6 py-3 text-right text-zinc-300">
                     {formatCost(row.cost)}
                   </td>
                 </tr>
@@ -303,7 +303,7 @@ function UsageFilter({
       <select
         value={filterProjectId}
         onChange={(e) => onFilter(e.target.value)}
-        className="rounded-lg border border-zinc-200 bg-zinc-50 py-2 pl-3 pr-8 text-sm text-zinc-900 outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-white"
+        className="rounded-lg border border-white/[0.07] bg-[#18181c] py-2 pl-3 pr-8 text-sm text-white outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
       >
         <option value="">All projects</option>
         {projects.map((p) => (
@@ -320,7 +320,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className={sectionCard + " p-5"}>
       <p className="text-sm text-zinc-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-white">
+      <p className="mt-1 text-2xl font-semibold text-white">
         {value}
       </p>
     </div>

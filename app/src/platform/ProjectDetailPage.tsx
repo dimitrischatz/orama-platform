@@ -39,22 +39,22 @@ import { Highlight, themes } from "prism-react-renderer";
 // ─── Shared styles ──────────────────────────────────────────────────────────
 
 const inputClass =
-  "w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500";
+  "w-full rounded-lg border border-white/[0.07] bg-[#18181c] px-3 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-zinc-500 focus:border-orange-400 focus:ring-1 focus:ring-orange-400";
 
 const btnPrimary =
   "rounded-full bg-orange-500 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50";
 
 const btnOutline =
-  "inline-flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800";
+  "inline-flex items-center gap-2 rounded-full border border-white/[0.12] px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/[0.05]";
 
 const btnGhost =
-  "rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200";
+  "rounded-lg p-2 text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-200";
 
 const sectionCard =
-  "rounded-2xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/50";
+  "rounded-2xl border border-white/[0.07] bg-[#111114]";
 
 const labelClass =
-  "mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-200";
+  "mb-1.5 block text-sm font-medium text-zinc-200";
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
@@ -83,7 +83,7 @@ export default function ProjectDetailPage(_props: { user: User }) {
         <p className="text-sm text-red-500">Project not found</p>
         <button
           onClick={() => navigate("/")}
-          className="mt-4 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+          className="mt-4 text-sm text-zinc-500 hover:text-white"
         >
           Back to Dashboard
         </button>
@@ -111,7 +111,7 @@ export default function ProjectDetailPage(_props: { user: User }) {
       <div className="mb-8 flex items-center justify-between">
         <button
           onClick={() => navigate("/")}
-          className="inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-white"
+          className="inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Projects
@@ -166,7 +166,7 @@ function ProjectSettingsSection({
 
   return (
     <div className={sectionCard + " p-6"}>
-      <h2 className="mb-1 text-base font-semibold text-zinc-900 dark:text-white">
+      <h2 className="mb-1 text-base font-semibold text-white">
         Settings
       </h2>
       <p className="mb-6 text-sm text-zinc-500">Project name and description</p>
@@ -246,7 +246,7 @@ function BasePromptSection({
     <div className={sectionCard + " p-6"}>
       <div className="mb-1 flex items-center gap-2">
         <FileText className="h-5 w-5 text-orange-500" />
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+        <h2 className="text-base font-semibold text-white">
           Base Prompt
         </h2>
       </div>
@@ -310,7 +310,7 @@ function SkillsSection({
       <div className="mb-1 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-orange-500" />
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+          <h2 className="text-base font-semibold text-white">
             Skills
           </h2>
         </div>
@@ -409,9 +409,9 @@ function SkillCard({
   };
 
   return (
-    <div className="flex items-start justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/30">
+    <div className="flex items-start justify-between rounded-xl border border-white/[0.07] bg-[#18181c] p-4">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-zinc-900 dark:text-white">
+        <p className="text-sm font-medium text-white">
           {skill.name}
         </p>
         {skill.description && (
@@ -427,7 +427,7 @@ function SkillCard({
         </button>
         <button
           onClick={handleDelete}
-          className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
+          className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -635,7 +635,7 @@ function MemoriesSection({ memories }: { memories: Prompt[] }) {
     <div className={sectionCard + " p-6"}>
       <div className="mb-1 flex items-center gap-2">
         <Brain className="h-5 w-5 text-orange-500" />
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+        <h2 className="text-base font-semibold text-white">
           Memories
         </h2>
       </div>
@@ -652,7 +652,7 @@ function MemoriesSection({ memories }: { memories: Prompt[] }) {
           {memories.map((m) => (
             <div
               key={m.id}
-              className="flex items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800/30"
+              className="flex items-start gap-3 rounded-xl border border-white/[0.07] bg-[#18181c] px-4 py-3"
             >
               {editingId === m.id ? (
                 <div className="flex flex-1 flex-col gap-2">
@@ -672,7 +672,7 @@ function MemoriesSection({ memories }: { memories: Prompt[] }) {
                     </button>
                     <button
                       onClick={() => setEditingId(null)}
-                      className="rounded-md px-3 py-1 text-xs font-medium text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                      className="rounded-md px-3 py-1 text-xs font-medium text-zinc-500 hover:text-zinc-300"
                     >
                       Cancel
                     </button>
@@ -680,7 +680,7 @@ function MemoriesSection({ memories }: { memories: Prompt[] }) {
                 </div>
               ) : (
                 <>
-                  <p className="flex-1 text-sm text-zinc-700 dark:text-zinc-300">
+                  <p className="flex-1 text-sm text-zinc-300">
                     {m.content}
                   </p>
                   <div className="flex items-center gap-1">
@@ -695,7 +695,7 @@ function MemoriesSection({ memories }: { memories: Prompt[] }) {
                     </button>
                     <button
                       onClick={() => handleDelete(m.id)}
-                      className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
+                      className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -722,7 +722,7 @@ function CodeBlock({ code, language = "tsx" }: { code: string; language?: string
   };
 
   return (
-    <div className="relative rounded-xl border border-zinc-200 bg-zinc-950 dark:border-zinc-700">
+    <div className="relative rounded-xl border border-white/[0.07] bg-zinc-950">
       <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
         <span className="text-xs text-zinc-500">{language}</span>
         <button
@@ -791,14 +791,14 @@ function App() {
     `rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
       active
         ? "bg-orange-500 text-white"
-        : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+        : "text-zinc-500 text-zinc-400 hover:text-white"
     }`;
 
   return (
     <div className={sectionCard + " p-6"}>
       <div className="mb-1 flex items-center gap-2">
         <Code2 className="h-5 w-5 text-orange-500" />
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-white">
+        <h2 className="text-base font-semibold text-white">
           Integrate into Your App
         </h2>
       </div>
@@ -807,15 +807,15 @@ function App() {
       </p>
 
       {/* Project ID */}
-      <div className="mb-6 flex items-center gap-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 px-4 py-3">
-        <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Project ID</span>
-        <code className="flex-1 rounded bg-zinc-100 dark:bg-zinc-800 px-2 py-1 text-xs font-mono text-zinc-700 dark:text-zinc-300 select-all">
+      <div className="mb-6 flex items-center gap-3 rounded-lg bg-[#18181c] px-4 py-3">
+        <span className="text-sm font-medium text-zinc-400">Project ID</span>
+        <code className="flex-1 rounded bg-zinc-800 px-2 py-1 text-xs font-mono text-zinc-300 select-all">
           {projectId}
         </code>
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-full border border-zinc-200 dark:border-zinc-700 p-1 w-fit">
+      <div className="mb-6 flex gap-1 rounded-full border border-white/[0.07] p-1 w-fit">
         <button className={tabClass(tab === "npm")} onClick={() => setTab("npm")}>
           npm Package
         </button>
@@ -827,17 +827,17 @@ function App() {
       {tab === "npm" ? (
         <div className="flex flex-col gap-6">
           <div>
-            <h3 className="mb-2 text-sm font-medium text-zinc-900 dark:text-zinc-200">
+            <h3 className="mb-2 text-sm font-medium text-zinc-200">
               1. Install the package
             </h3>
             <CodeBlock code={installSnippet} language="bash" />
           </div>
           <div>
-            <h3 className="mb-2 text-sm font-medium text-zinc-900 dark:text-zinc-200">
+            <h3 className="mb-2 text-sm font-medium text-zinc-200">
               2. Wrap your app with OramaProvider
             </h3>
             <p className="mb-3 text-sm text-zinc-500">
-              Add the <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-mono text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">OramaProvider</code> at the root of your component tree.
+              Add the <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs font-mono text-zinc-300">OramaProvider</code> at the root of your component tree.
             </p>
             <CodeBlock code={providerSnippet} language="tsx" />
           </div>
@@ -849,7 +849,7 @@ function App() {
           </p>
           <CodeBlock code={scriptSnippet} language="html" />
           <p className="text-xs text-zinc-400">
-            Replace <code className="rounded bg-zinc-100 dark:bg-zinc-800 px-1 py-0.5 text-xs">YOUR_API_KEY</code> with your API key from the dashboard.
+            Replace <code className="rounded bg-zinc-800 px-1 py-0.5 text-xs">YOUR_API_KEY</code> with your API key from the dashboard.
           </p>
         </div>
       )}

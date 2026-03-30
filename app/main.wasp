@@ -6,7 +6,7 @@ app OpenSaaS {
   title: "Orama",
 
   head: [
-    "<link rel='icon' href='/favicon.ico' />",
+    "<link rel='icon' type='image/svg+xml' href='/favicon.svg' />",
     "<meta charset='utf-8' />",
     "<meta name='description' content='Orama is an AI agent for your app — it reads your documentation, answers user questions, and automates workflows directly inside your product.' />",
     "<meta name='author' content='Orama' />",

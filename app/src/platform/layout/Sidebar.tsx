@@ -3,6 +3,7 @@ import { useAuth, logout } from "wasp/client/auth";
 import { routes } from "wasp/client/router";
 import { FolderKanban, Key, BarChart3, BookOpen, LogOut, Settings, X } from "lucide-react";
 import { cn } from "../../client/utils";
+import oramaLogo from "../../client/static/orama-logo.svg";
 
 const navItems = [
   {
@@ -46,14 +47,15 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   };
 
   return (
-    <div className="flex h-full flex-col bg-zinc-950 font-['Inter',sans-serif]">
+    <div className="flex h-full flex-col bg-[#111114] font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Header */}
       <div className="flex h-16 items-center justify-between border-b border-zinc-800 px-6">
         <Link
           to={routes.DashboardRoute.to}
-          className="text-lg font-bold tracking-tight text-white"
+          className="flex items-center gap-2 text-lg font-bold tracking-tight text-white"
           onClick={onClose}
         >
+          <img src={oramaLogo} alt="Orama" className="h-6 w-6" />
           Orama
         </Link>
         {onClose && (

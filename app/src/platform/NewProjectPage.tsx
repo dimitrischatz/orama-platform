@@ -35,25 +35,25 @@ export default function NewProjectPage(_props: { user: User }) {
     <div className="mx-auto max-w-5xl p-6 lg:p-10">
       <button
         onClick={() => navigate("/")}
-        className="mb-8 inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-zinc-900 dark:hover:text-white"
+        className="mb-8 inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-white"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Projects
       </button>
 
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-white">
         New Project
       </h1>
       <p className="mb-8 text-sm text-zinc-500">
         Set up a new Orama agent for your application
       </p>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-700 dark:bg-zinc-800/50">
+      <div className="rounded-2xl border border-white/[0.07] bg-[#111114] p-8">
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div>
             <label
               htmlFor="name"
-              className="mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-200"
+              className="mb-1.5 block text-sm font-medium text-zinc-200"
             >
               Name
             </label>
@@ -63,13 +63,13 @@ export default function NewProjectPage(_props: { user: User }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500"
+              className="w-full rounded-lg border border-white/[0.07] bg-[#18181c] px-3 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-zinc-500 focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
             />
           </div>
           <div>
             <label
               htmlFor="description"
-              className="mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-200"
+              className="mb-1.5 block text-sm font-medium text-zinc-200"
             >
               Description{" "}
               <span className="font-normal text-zinc-400">(optional)</span>
@@ -80,7 +80,7 @@ export default function NewProjectPage(_props: { user: User }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500"
+              className="w-full rounded-lg border border-white/[0.07] bg-[#18181c] px-3 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-zinc-500 focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
             />
           </div>
           <button

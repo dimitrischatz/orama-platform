@@ -12,7 +12,7 @@ export function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen font-['Inter',sans-serif]">
+    <div className="flex h-screen font-['Plus_Jakarta_Sans',sans-serif]">
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 lg:block">
         <Sidebar />
@@ -21,10 +21,10 @@ export function DashboardLayout() {
       {/* Main content */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
-        <header className="flex h-14 items-center border-b border-zinc-200 px-4 dark:border-zinc-800 lg:hidden">
+        <header className="flex h-14 items-center border-b border-white/[0.07] px-4 lg:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <button className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
+              <button className="text-zinc-400 hover:text-white">
                 <Menu className="h-5 w-5" />
               </button>
             </SheetTrigger>
@@ -36,7 +36,7 @@ export function DashboardLayout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900">
+        <main className="flex-1 overflow-y-auto bg-[#09090b]">
           <Outlet />
         </main>
       </div>

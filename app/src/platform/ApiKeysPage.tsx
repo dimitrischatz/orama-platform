@@ -12,7 +12,7 @@ import { useToast } from "../client/hooks/use-toast";
 export default function ApiKeysPage(_props: { user: User }) {
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-10">
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-white">
         API Keys
       </h1>
       <p className="mb-8 text-sm text-zinc-500">
@@ -79,8 +79,8 @@ function ApiKeysSection() {
       </div>
 
       {showForm && (
-        <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-800/50">
-          <p className="mb-3 text-sm font-medium text-zinc-900 dark:text-white">
+        <div className="mb-6 rounded-2xl border border-white/[0.07] bg-[#111114] p-5">
+          <p className="mb-3 text-sm font-medium text-white">
             New API Key
           </p>
           <div className="flex gap-3">
@@ -89,7 +89,7 @@ function ApiKeysSection() {
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-              className="flex-1 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500"
+              className="flex-1 rounded-lg border border-white/[0.07] bg-[#18181c] px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-zinc-500 focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
               autoFocus
             />
             <button
@@ -104,7 +104,7 @@ function ApiKeysSection() {
                 setShowForm(false);
                 setNewKeyName("");
               }}
-              className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="rounded-lg border border-white/[0.07] px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/[0.05]"
             >
               Cancel
             </button>
@@ -114,12 +114,12 @@ function ApiKeysSection() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-orange-500" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
         </div>
       ) : !apiKeys?.length ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800/50">
+        <div className="rounded-2xl border border-dashed border-zinc-700 bg-[#111114] py-16 text-center">
           <Key className="mx-auto mb-4 h-10 w-10 text-zinc-400" />
-          <p className="mb-2 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+          <p className="mb-2 text-sm font-medium text-zinc-300">
             No API keys yet
           </p>
           <p className="text-sm text-zinc-400">
@@ -131,11 +131,11 @@ function ApiKeysSection() {
           {apiKeys.map((apiKey) => (
             <div
               key={apiKey.id}
-              className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-800/50"
+              className="rounded-2xl border border-white/[0.07] bg-[#111114] p-5"
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                  <p className="text-sm font-semibold text-white">
                     {apiKey.name}
                   </p>
                   <p className="mt-2 font-mono text-xs text-zinc-500">
@@ -155,7 +155,7 @@ function ApiKeysSection() {
                 <div className="ml-4 flex items-center gap-1">
                   <button
                     onClick={() => toggleKeyVisibility(apiKey.id)}
-                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-200"
                   >
                     {visibleKeys.has(apiKey.id) ? (
                       <EyeOff className="h-4 w-4" />
@@ -165,13 +165,13 @@ function ApiKeysSection() {
                   </button>
                   <button
                     onClick={() => copyKey(apiKey.key)}
-                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-white/[0.05] hover:text-zinc-200"
                   >
                     <Copy className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleRevoke(apiKey.id)}
-                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
+                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
