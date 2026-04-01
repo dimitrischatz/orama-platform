@@ -30,7 +30,7 @@ export function EmailVerificationPage() {
     return (
       <AuthPageLayout title="Verifying email" subtitle="Please wait...">
         <div className="flex justify-center py-4">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-orange-500" />
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
         </div>
       </AuthPageLayout>
     );
