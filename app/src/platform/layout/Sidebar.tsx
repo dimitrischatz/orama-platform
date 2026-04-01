@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth, logout } from "wasp/client/auth";
 import { routes } from "wasp/client/router";
-import { FolderKanban, Key, BarChart3, BookOpen, LogOut, Settings, X } from "lucide-react";
+import { FolderKanban, Key, BarChart3, BookOpen, LogOut, Settings, Shield, X } from "lucide-react";
 import { cn } from "../../client/utils";
 import oramaLogo from "../../client/static/orama-logo.svg";
 
@@ -89,6 +89,25 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             </li>
           ))}
         </ul>
+
+        {/* Admin link — only visible to admins */}
+        {user?.isAdmin && (
+          <div className="mt-4 border-t border-zinc-800 pt-4">
+            <Link
+              to={routes.AdminRoute.to}
+              onClick={onClose}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                location.pathname.startsWith("/admin")
+                  ? "bg-orange-500/10 text-orange-400"
+                  : "text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200",
+              )}
+            >
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* Footer / User */}

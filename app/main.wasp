@@ -237,51 +237,20 @@ job dailyStatsJob {
 //#endregion
 
 //#region Admin Dashboard
-route AdminRoute { path: "/admin", to: AnalyticsDashboardPage }
-page AnalyticsDashboardPage {
+route AdminRoute { path: "/admin", to: AdminDashboardPage }
+page AdminDashboardPage {
   authRequired: true,
-  component: import AnalyticsDashboardPage from "@src/admin/dashboards/analytics/AnalyticsDashboardPage"
+  component: import AdminDashboardPage from "@src/admin/AdminDashboardPage"
 }
 
-route AdminUsersRoute { path: "/admin/users", to: AdminUsersPage }
-page AdminUsersPage {
-  authRequired: true,
-  component: import AdminUsers from "@src/admin/dashboards/users/UsersDashboardPage"
-}
-
-route AdminSettingsRoute { path: "/admin/settings", to: AdminSettingsPage }
-page AdminSettingsPage {
-  authRequired: true,
-  component: import AdminSettings from "@src/admin/elements/settings/SettingsPage"
-}
-
-route AdminCalendarRoute { path: "/admin/calendar", to: AdminCalendarPage }
-page AdminCalendarPage {
-  authRequired: true,
-  component: import AdminCalendar from "@src/admin/elements/calendar/CalendarPage"
-}
-
-
-route AdminUIButtonsRoute { path: "/admin/ui/buttons", to: AdminUIButtonsPage }
-page AdminUIButtonsPage {
-  authRequired: true,
-  component: import AdminUI from "@src/admin/elements/ui-elements/ButtonsPage"
+query getAdminDashboard {
+  fn: import { getAdminDashboard } from "@src/admin/operations",
+  entities: [User, Project, Prompt, UsageRecord, ApiKey, AgentLog]
 }
 
 route NotFoundRoute { path: "*", to: NotFoundPage }
 page NotFoundPage {
   component: import { NotFoundPage } from "@src/client/components/NotFoundPage"
-}
-//#endregion
-
-//#region Contact Form Messages
-// TODO:
-// add functionality to allow users to send messages to admin
-// and make them accessible via the admin dashboard
-route AdminMessagesRoute { path: "/admin/messages", to: AdminMessagesPage }
-page AdminMessagesPage {
-  authRequired: true,
-  component: import AdminMessages from "@src/admin/dashboards/messages/MessagesPage"
 }
 //#endregion
 

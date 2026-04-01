@@ -28,12 +28,9 @@ export default function App() {
       location.pathname.startsWith("/usage") ||
       location.pathname.startsWith("/keys") ||
       location.pathname.startsWith("/docs") ||
-      location.pathname.startsWith("/account")
+      location.pathname.startsWith("/account") ||
+      location.pathname.startsWith("/admin")
     );
-  }, [location]);
-
-  const isAdminDashboard = useMemo(() => {
-    return location.pathname.startsWith("/admin");
   }, [location]);
 
   const isDemoStore = useMemo(() => {
@@ -89,8 +86,6 @@ export default function App() {
           >
             <DashboardLayout />
           </OramaProvider>
-        ) : isAdminDashboard ? (
-          <Outlet />
         ) : (
           <>
             <div className="mx-auto max-w-screen-2xl">

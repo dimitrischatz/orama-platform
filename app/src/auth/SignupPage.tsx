@@ -5,7 +5,7 @@ import { Link, routes } from "wasp/client/router";
 import { AuthPageLayout } from "./AuthPageLayout";
 
 const inputClass =
-  "w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-orange-400 focus:ring-1 focus:ring-orange-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500";
+  "w-full rounded-lg border border-white/[0.07] bg-[#18181c] px-3 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-zinc-500 focus:border-orange-400 focus:ring-1 focus:ring-orange-400";
 
 export function Signup() {
   const [email, setEmail] = useState("");
@@ -61,13 +61,13 @@ export function Signup() {
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {error && (
-          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-500/10 dark:text-red-400">
+          <div className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
             {error}
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-200">
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-zinc-200">
             Email
           </label>
           <input
@@ -82,7 +82,7 @@ export function Signup() {
         </div>
 
         <div>
-          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-zinc-900 dark:text-zinc-200">
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-zinc-200">
             Password
           </label>
           <input
