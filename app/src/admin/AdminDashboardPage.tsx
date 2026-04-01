@@ -26,16 +26,16 @@ import type {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminDashboardPage({ user }: { user: User }) {
-  if (!user.isAdmin) {
-    return <Navigate to="/" replace />;
-  }
-
   const { data, isLoading } = useQuery(getAdminDashboard);
   const [view, setView] = useState<
     | { type: "list" }
     | { type: "user"; user: AdminUserSummary }
     | { type: "project"; user: AdminUserSummary; projectId: string }
   >({ type: "list" });
+
+  if (!user.isAdmin) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="mx-auto max-w-6xl p-6 lg:p-10 font-['Plus_Jakarta_Sans',sans-serif]">
