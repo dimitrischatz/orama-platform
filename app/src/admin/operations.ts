@@ -1,82 +1,14 @@
 import { HttpError } from "wasp/server";
-import type { GetAdminDashboard } from "wasp/server/operations";
-
-type AdminPrompt = {
-  id: string;
-  name: string;
-  description: string | null;
-  content: string;
-  type: string;
-  createdAt: Date;
-};
-
-type AdminAgentLog = {
-  id: string;
-  sessionId: string;
-  step: number;
-  goal: string;
-  pageUrl: string | null;
-  status: string;
-  errorMessage: string | null;
-  inputTokens: number;
-  outputTokens: number;
-  createdAt: Date;
-};
-
-type AdminUsageRecord = {
-  id: string;
-  model: string;
-  promptTokens: number;
-  completionTokens: number;
-  cost: number;
-  createdAt: Date;
-};
-
-type AdminProject = {
-  id: string;
-  name: string;
-  description: string | null;
-  createdAt: Date;
-  totalCost: number;
-  prompts: AdminPrompt[];
-  usageRecords: AdminUsageRecord[];
-  agentLogs: AdminAgentLog[];
-  _count: {
-    prompts: number;
-    usageRecords: number;
-    agentLogs: number;
-  };
-};
-
-type AdminUser = {
-  id: string;
-  email: string | null;
-  createdAt: Date;
-  credits: number;
-  balance: number;
-  isAdmin: boolean;
-  subscriptionStatus: string | null;
-  subscriptionPlan: string | null;
-  _count: {
-    projects: number;
-    apiKeys: number;
-  };
-  projects: AdminProject[];
-};
-
-type AdminDashboardOutput = {
-  stats: {
-    totalUsers: number;
-    totalProjects: number;
-    totalRequests: number;
-    totalCost: number;
-  };
-  users: AdminUser[];
-};
+import type { GetAdminDashboard, GetAdminProjectDetail } from "wasp/server/operations";
+import type {
+  AdminDashboardListOutput,
+  AdminProjectDetailOutput,
+  AdminProjectSummary,
+} from "../shared/adminTypes";
 
 export const getAdminDashboard: GetAdminDashboard<
   void,
-  AdminDashboardOutput
+  AdminDashboardListOutput
 > = async (_args, context) => {
   if (!context.user) {
     throw new HttpError(401, "Not authenticated");
@@ -115,45 +47,6 @@ export const getAdminDashboard: GetAdminDashboard<
                 agentLogs: true,
               },
             },
-            prompts: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-                content: true,
-                type: true,
-                createdAt: true,
-              },
-              orderBy: { createdAt: "asc" },
-            },
-            usageRecords: {
-              select: {
-                id: true,
-                model: true,
-                promptTokens: true,
-                completionTokens: true,
-                cost: true,
-                createdAt: true,
-              },
-              orderBy: { createdAt: "desc" },
-              take: 20,
-            },
-            agentLogs: {
-              select: {
-                id: true,
-                sessionId: true,
-                step: true,
-                goal: true,
-                pageUrl: true,
-                status: true,
-                errorMessage: true,
-                inputTokens: true,
-                outputTokens: true,
-                createdAt: true,
-              },
-              orderBy: { createdAt: "desc" },
-              take: 30,
-            },
           },
           orderBy: { createdAt: "desc" },
         },
@@ -178,9 +71,9 @@ export const getAdminDashboard: GetAdminDashboard<
   }
 
   // Attach totalCost to each project
-  const enrichedUsers = users.map((u: any) => ({
+  const enrichedUsers = users.map((u) => ({
     ...u,
-    projects: u.projects.map((p: any) => ({
+    projects: u.projects.map((p): AdminProjectSummary => ({
       ...p,
       totalCost: costByProject.get(p.id) ?? 0,
     })),
@@ -193,6 +86,89 @@ export const getAdminDashboard: GetAdminDashboard<
       totalRequests: usageAgg._count ?? 0,
       totalCost: usageAgg._sum?.cost ?? 0,
     },
-    users: enrichedUsers as unknown as AdminUser[],
+    users: enrichedUsers,
+  };
+};
+
+export const getAdminProjectDetail: GetAdminProjectDetail<
+  { projectId: string },
+  AdminProjectDetailOutput
+> = async (args, context) => {
+  if (!context.user) {
+    throw new HttpError(401, "Not authenticated");
+  }
+  if (!context.user.isAdmin) {
+    throw new HttpError(403, "Admin access required");
+  }
+
+  const project = await context.entities.Project.findUnique({
+    where: { id: args.projectId },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      createdAt: true,
+      _count: {
+        select: {
+          prompts: true,
+          usageRecords: true,
+          agentLogs: true,
+        },
+      },
+      prompts: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          content: true,
+          type: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
+      usageRecords: {
+        select: {
+          id: true,
+          model: true,
+          promptTokens: true,
+          completionTokens: true,
+          cost: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      },
+      agentLogs: {
+        select: {
+          id: true,
+          sessionId: true,
+          step: true,
+          goal: true,
+          pageUrl: true,
+          status: true,
+          errorMessage: true,
+          inputTokens: true,
+          outputTokens: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      },
+    },
+  });
+
+  if (!project) {
+    throw new HttpError(404, "Project not found");
+  }
+
+  // Get full cost aggregation for this project
+  const costAgg = await context.entities.UsageRecord.aggregate({
+    where: { projectId: args.projectId },
+    _sum: { cost: true },
+  });
+
+  return {
+    ...project,
+    totalCost: costAgg._sum?.cost ?? 0,
   };
 };

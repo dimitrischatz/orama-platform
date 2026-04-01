@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { getAdminDashboard, useQuery } from "wasp/client/operations";
+import { getAdminDashboard, getAdminProjectDetail, useQuery } from "wasp/client/operations";
 import type { User } from "wasp/entities";
 import {
   Users,
@@ -10,74 +10,18 @@ import {
   ChevronDown,
   ChevronRight,
   Shield,
-  Key,
   Sparkles,
   FileText,
   Brain,
   ArrowLeft,
   AlertCircle,
   CheckCircle2,
-  Clock,
-  ExternalLink,
 } from "lucide-react";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type AdminPrompt = {
-  id: string;
-  name: string;
-  description: string | null;
-  content: string;
-  type: string;
-  createdAt: Date;
-};
-
-type AdminAgentLog = {
-  id: string;
-  sessionId: string;
-  step: number;
-  goal: string;
-  pageUrl: string | null;
-  status: string;
-  errorMessage: string | null;
-  inputTokens: number;
-  outputTokens: number;
-  createdAt: Date;
-};
-
-type AdminUsageRecord = {
-  id: string;
-  model: string;
-  promptTokens: number;
-  completionTokens: number;
-  cost: number;
-  createdAt: Date;
-};
-
-type AdminProject = {
-  id: string;
-  name: string;
-  description: string | null;
-  createdAt: Date;
-  totalCost: number;
-  prompts: AdminPrompt[];
-  usageRecords: AdminUsageRecord[];
-  agentLogs: AdminAgentLog[];
-  _count: { prompts: number; usageRecords: number; agentLogs: number };
-};
-
-type AdminUser = {
-  id: string;
-  email: string | null;
-  createdAt: Date;
-  credits: number;
-  balance: number;
-  isAdmin: boolean;
-  subscriptionStatus: string | null;
-  subscriptionPlan: string | null;
-  _count: { projects: number; apiKeys: number };
-  projects: AdminProject[];
-};
+import type {
+  AdminProject,
+  AdminPrompt,
+  AdminUserSummary,
+} from "../shared/adminTypes";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -89,8 +33,8 @@ export default function AdminDashboardPage({ user }: { user: User }) {
   const { data, isLoading } = useQuery(getAdminDashboard);
   const [view, setView] = useState<
     | { type: "list" }
-    | { type: "user"; user: AdminUser }
-    | { type: "project"; user: AdminUser; project: AdminProject }
+    | { type: "user"; user: AdminUserSummary }
+    | { type: "project"; user: AdminUserSummary; projectId: string }
   >({ type: "list" });
 
   return (
@@ -117,14 +61,14 @@ export default function AdminDashboardPage({ user }: { user: User }) {
         <UserDetail
           user={view.user}
           onBack={() => setView({ type: "list" })}
-          onSelectProject={(p) =>
-            setView({ type: "project", user: view.user, project: p })
+          onSelectProject={(projectId) =>
+            setView({ type: "project", user: view.user, projectId })
           }
         />
       ) : (
-        <ProjectDetail
+        <ProjectDetailLoader
           user={view.user}
-          project={view.project}
+          projectId={view.projectId}
           onBack={() => setView({ type: "user", user: view.user })}
         />
       )}
@@ -172,8 +116,8 @@ function UsersTable({
   users,
   onSelectUser,
 }: {
-  users: AdminUser[];
-  onSelectUser: (u: AdminUser) => void;
+  users: AdminUserSummary[];
+  onSelectUser: (u: AdminUserSummary) => void;
 }) {
   const [search, setSearch] = useState("");
 
@@ -249,9 +193,9 @@ function UserDetail({
   onBack,
   onSelectProject,
 }: {
-  user: AdminUser;
+  user: AdminUserSummary;
   onBack: () => void;
-  onSelectProject: (p: AdminProject) => void;
+  onSelectProject: (projectId: string) => void;
 }) {
   const totalCost = user.projects.reduce((sum, p) => sum + p.totalCost, 0);
   const totalRequests = user.projects.reduce((sum, p) => sum + p._count.usageRecords, 0);
@@ -305,11 +249,10 @@ function UserDetail({
       ) : (
         <div className="flex flex-col gap-3">
           {user.projects.map((p) => {
-            const projectCost = p.totalCost;
             return (
               <div
                 key={p.id}
-                onClick={() => onSelectProject(p)}
+                onClick={() => onSelectProject(p.id)}
                 className="cursor-pointer rounded-2xl border border-white/[0.07] bg-[#111114] p-5 transition-colors hover:border-orange-500/30"
               >
                 <div className="flex items-center justify-between">
@@ -337,7 +280,7 @@ function UserDetail({
                     </span>
                     <span className="flex items-center gap-1.5">
                       <DollarSign className="h-3.5 w-3.5" />
-                      ${projectCost.toFixed(4)}
+                      ${p.totalCost.toFixed(4)}
                     </span>
                     <ChevronRight className="h-4 w-4 text-zinc-600" />
                   </div>
@@ -351,6 +294,39 @@ function UserDetail({
   );
 }
 
+// ─── Project Detail Loader ────────────────────────────────────────────────────
+
+function ProjectDetailLoader({
+  user,
+  projectId,
+  onBack,
+}: {
+  user: AdminUserSummary;
+  projectId: string;
+  onBack: () => void;
+}) {
+  const { data: project, isLoading } = useQuery(getAdminProjectDetail, { projectId });
+
+  if (isLoading || !project) {
+    return (
+      <div>
+        <button
+          onClick={onBack}
+          className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to {user.email}
+        </button>
+        <div className="flex items-center justify-center py-20">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
+        </div>
+      </div>
+    );
+  }
+
+  return <ProjectDetail user={user} project={project} onBack={onBack} />;
+}
+
 // ─── Project Detail ───────────────────────────────────────────────────────────
 
 function ProjectDetail({
@@ -358,7 +334,7 @@ function ProjectDetail({
   project,
   onBack,
 }: {
-  user: AdminUser;
+  user: AdminUserSummary;
   project: AdminProject;
   onBack: () => void;
 }) {
@@ -559,6 +535,11 @@ function ProjectDetail({
               )}
             </tbody>
           </table>
+          {project.usageRecords.length > 0 && project.usageRecords.length < project._count.usageRecords && (
+            <div className="border-t border-white/[0.07] px-6 py-3 text-center text-xs text-zinc-500">
+              Showing {project.usageRecords.length} of {project._count.usageRecords} records
+            </div>
+          )}
         </div>
       )}
 

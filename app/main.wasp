@@ -245,7 +245,12 @@ page AdminDashboardPage {
 
 query getAdminDashboard {
   fn: import { getAdminDashboard } from "@src/admin/operations",
-  entities: [User, Project, Prompt, UsageRecord, ApiKey, AgentLog]
+  entities: [User, Project, UsageRecord]
+}
+
+query getAdminProjectDetail {
+  fn: import { getAdminProjectDetail } from "@src/admin/operations",
+  entities: [Project, Prompt, UsageRecord, AgentLog]
 }
 
 route NotFoundRoute { path: "*", to: NotFoundPage }
