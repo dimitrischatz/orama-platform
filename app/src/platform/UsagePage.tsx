@@ -262,7 +262,7 @@ function UsageContent({
               return (
                 <tr
                   key={`${row.date}:${row.projectId}`}
-                  className="border-b border-zinc-100 last:border-0 border-white/[0.05]"
+                  className="border-b border-white/[0.05] last:border-0"
                 >
                   <td className="px-6 py-3 text-white">{row.date}</td>
                   <td className="px-6 py-3">

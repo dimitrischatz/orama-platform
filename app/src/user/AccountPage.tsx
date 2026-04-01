@@ -16,7 +16,7 @@ import {
 export default function AccountPage({ user }: { user: User }) {
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-10">
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-white">
         Account
       </h1>
       <p className="mb-8 text-sm text-zinc-500">
@@ -24,19 +24,19 @@ export default function AccountPage({ user }: { user: User }) {
       </p>
 
       {/* Account Info */}
-      <section className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800/50">
-        <div className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-700">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-white">
+      <section className="rounded-2xl border border-white/[0.07] bg-[#111114]">
+        <div className="border-b border-white/[0.07] px-6 py-4">
+          <h2 className="text-sm font-semibold text-white">
             Account Information
           </h2>
         </div>
-        <div className="divide-y divide-zinc-100 dark:divide-zinc-700/50">
+        <div className="divide-y divide-white/[0.07]">
           {user.email && (
             <div className="flex items-center gap-3 px-6 py-4">
               <Mail className="h-4 w-4 text-zinc-400" />
               <div>
                 <p className="text-xs text-zinc-500">Email</p>
-                <p className="text-sm text-zinc-900 dark:text-white">
+                <p className="text-sm text-white">
                   {user.email}
                 </p>
               </div>
@@ -47,7 +47,7 @@ export default function AccountPage({ user }: { user: User }) {
               <UserIcon className="h-4 w-4 text-zinc-400" />
               <div>
                 <p className="text-xs text-zinc-500">Username</p>
-                <p className="text-sm text-zinc-900 dark:text-white">
+                <p className="text-sm text-white">
                   {user.username}
                 </p>
               </div>
@@ -57,15 +57,15 @@ export default function AccountPage({ user }: { user: User }) {
       </section>
 
       {/* Danger Zone */}
-      <section className="mt-8 rounded-2xl border border-red-200 bg-white dark:border-red-500/20 dark:bg-zinc-800/50">
-        <div className="border-b border-red-200 px-6 py-4 dark:border-red-500/20">
-          <h2 className="text-sm font-semibold text-red-600 dark:text-red-400">
+      <section className="mt-8 rounded-2xl border border-red-500/20 bg-[#111114]">
+        <div className="border-b border-red-500/20 px-6 py-4">
+          <h2 className="text-sm font-semibold text-red-400">
             Danger Zone
           </h2>
         </div>
         <div className="flex items-center justify-between px-6 py-5">
           <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-white">
+            <p className="text-sm font-medium text-white">
               Delete account
             </p>
             <p className="mt-0.5 text-sm text-zinc-500">
@@ -105,7 +105,7 @@ function DeleteAccountButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="shrink-0 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+        className="shrink-0 rounded-lg border border-red-500/30 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10"
       >
         Delete account
       </button>
@@ -125,7 +125,7 @@ function DeleteAccountButton() {
           </DialogHeader>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="mb-2 block text-sm font-medium text-zinc-300">
               Type <span className="font-mono font-bold">DELETE</span> to
               confirm
             </label>
@@ -133,7 +133,7 @@ function DeleteAccountButton() {
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="DELETE"
-              className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-red-400 focus:ring-1 focus:ring-red-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500"
+              className="w-full rounded-lg border border-white/[0.07] bg-[#18181c] px-3 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-zinc-500 focus:border-red-400 focus:ring-1 focus:ring-red-400"
               autoFocus
             />
           </div>
@@ -144,7 +144,7 @@ function DeleteAccountButton() {
                 setOpen(false);
                 setConfirmText("");
               }}
-              className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="rounded-lg border border-white/[0.07] px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/[0.05]"
             >
               Cancel
             </button>
