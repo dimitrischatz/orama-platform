@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { getAdminDashboard, getAdminProjectDetail, useQuery } from "wasp/client/operations";
+import ReactMarkdown from "react-markdown";
+import { getAdminDashboard, getAdminProjectDetail, getAdminAgentSession, useQuery } from "wasp/client/operations";
 import type { User } from "wasp/entities";
 import {
   Users,
@@ -16,6 +17,8 @@ import {
   ArrowLeft,
   AlertCircle,
   CheckCircle2,
+  Globe,
+  Wrench,
 } from "lucide-react";
 import type {
   AdminProject,
@@ -199,7 +202,6 @@ function UserDetail({
 }) {
   const totalCost = user.projects.reduce((sum, p) => sum + p.totalCost, 0);
   const totalRequests = user.projects.reduce((sum, p) => sum + p._count.usageRecords, 0);
-  const totalLogs = user.projects.reduce((sum, p) => sum + p._count.agentLogs, 0);
 
   return (
     <div>
@@ -340,6 +342,7 @@ function ProjectDetail({
 }) {
   const [tab, setTab] = useState<"prompts" | "usage" | "logs">("prompts");
   const [expandedPrompt, setExpandedPrompt] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const basePrompt = project.prompts.find((p) => p.type === "base");
   const skills = project.prompts.filter((p) => p.type === "skill");
@@ -544,50 +547,291 @@ function ProjectDetail({
       )}
 
       {tab === "logs" && (
-        <div className="flex flex-col gap-3">
-          {sessions.map((s) => (
-            <div
-              key={s.id}
-              className="rounded-xl border border-white/[0.07] bg-[#111114] p-4"
-            >
-              <div className="flex items-start justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    {s.hasError ? (
-                      <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+        selectedSessionId ? (
+          <SessionDetail
+            sessionId={selectedSessionId}
+            onBack={() => setSelectedSessionId(null)}
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {sessions.map((s) => (
+              <div
+                key={s.id}
+                onClick={() => setSelectedSessionId(s.id)}
+                className="cursor-pointer rounded-xl border border-white/[0.07] bg-[#111114] p-4 transition-colors hover:border-orange-500/30"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      {s.hasError ? (
+                        <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                      )}
+                      <p className="truncate text-sm font-medium text-white">{s.goal}</p>
+                    </div>
+                    {s.hasError && s.errorMessage && (
+                      <p className="mt-1 ml-6 text-xs text-red-400">{s.errorMessage}</p>
                     )}
-                    <p className="truncate text-sm font-medium text-white">{s.goal}</p>
                   </div>
-                  {s.hasError && s.errorMessage && (
-                    <p className="mt-1 ml-6 text-xs text-red-400">{s.errorMessage}</p>
-                  )}
-                </div>
-                <div className="ml-4 flex items-center gap-4 text-xs text-zinc-500 shrink-0">
-                  <span>{s.steps} steps</span>
-                  <span>{s.totalTokens.toLocaleString()} tokens</span>
-                  <span>
-                    {s.createdAt
-                      ? new Date(s.createdAt).toLocaleString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "—"}
-                  </span>
+                  <div className="ml-4 flex items-center gap-4 text-xs text-zinc-500 shrink-0">
+                    <span>{s.steps} steps</span>
+                    <span>{s.totalTokens.toLocaleString()} tokens</span>
+                    <span>
+                      {s.createdAt
+                        ? new Date(s.createdAt).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-zinc-600" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-          {!sessions.length && (
-            <p className="py-6 text-center text-sm text-zinc-500">No agent sessions</p>
-          )}
-        </div>
+            ))}
+            {!sessions.length && (
+              <p className="py-6 text-center text-sm text-zinc-500">No agent sessions</p>
+            )}
+          </div>
+        )
       )}
     </div>
   );
+}
+
+// ─── Session Detail ──────────────────────────────────────────────────────────
+
+function SessionDetail({
+  sessionId,
+  onBack,
+}: {
+  sessionId: string;
+  onBack: () => void;
+}) {
+  const { data: session, isLoading } = useQuery(getAdminAgentSession, { sessionId });
+  const [expandedRaw, setExpandedRaw] = useState<string | null>(null);
+
+  if (isLoading || !session) {
+    return (
+      <div>
+        <button
+          onClick={onBack}
+          className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to sessions
+        </button>
+        <div className="flex items-center justify-center py-20">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-700 border-t-orange-500" />
+        </div>
+      </div>
+    );
+  }
+
+  const totalTokens = session.steps.reduce(
+    (s, l) => s + l.inputTokens + l.outputTokens,
+    0,
+  );
+
+  return (
+    <div>
+      <button
+        onClick={onBack}
+        className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-white"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to sessions
+      </button>
+
+      <div className="mb-8">
+        <h3 className="text-lg font-bold text-white">{session.goal}</h3>
+        <p className="mt-1 text-xs text-zinc-500">
+          {session.steps.length} steps · {totalTokens.toLocaleString()} tokens
+        </p>
+      </div>
+
+      {/* Timeline */}
+      <div className="relative ml-4 border-l border-zinc-800 pl-6">
+        {session.steps.map((step, i) => {
+          const actions = step.actions ? parseActions(step.actions) : [];
+          const prevUrl = i > 0 ? session.steps[i - 1].pageUrl : null;
+          const prevGoal = i > 0 ? session.steps[i - 1].goal : null;
+          const navigated = step.pageUrl && step.pageUrl !== prevUrl;
+          const goalChanged = i === 0 || step.goal !== prevGoal;
+
+          return (
+            <div key={step.id} className="relative mb-8 last:mb-0">
+              {/* Timeline dot */}
+              <div
+                className={`absolute -left-[31px] flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                  step.status === "error"
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-emerald-500/20 text-emerald-400"
+                }`}
+              >
+                {step.step}
+              </div>
+
+              {/* User message — shown on first step and when goal changes (follow-up) */}
+              {goalChanged && (
+                <div className="mb-3 rounded-lg bg-blue-500/5 border border-blue-500/20 px-4 py-3">
+                  <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-blue-400">
+                    {i === 0 ? "User" : "User follow-up"}
+                  </p>
+                  <p className="text-sm text-zinc-200">{step.goal}</p>
+                </div>
+              )}
+
+              {/* Page navigation */}
+              {navigated && (
+                <div className="mb-2 flex items-center gap-1.5 text-xs text-zinc-500">
+                  <Globe className="h-3 w-3" />
+                  Navigated to <span className="text-zinc-300">{step.pageUrl}</span>
+                </div>
+              )}
+
+              {/* Actions as readable pills */}
+              {actions.length > 0 && (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {actions.map((action, j) => (
+                    <span
+                      key={j}
+                      className="inline-flex items-center gap-1 rounded-md bg-orange-500/10 px-2 py-1 text-xs text-orange-300"
+                    >
+                      <Wrench className="h-3 w-3" />
+                      {action}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Tool results — compact collapsible */}
+              {step.toolResults && (
+                <details className="mb-2 rounded-lg bg-blue-500/5 border border-blue-500/10 overflow-hidden group">
+                  <summary className="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-400 cursor-pointer select-none hover:bg-blue-500/5">
+                    <Activity className="h-3 w-3" />
+                    Tool Results
+                    <ChevronRight className="h-3 w-3 ml-auto transition-transform group-open:rotate-90" />
+                  </summary>
+                  <pre className="px-3 pb-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-zinc-400 max-h-60 overflow-y-auto">
+                    {formatJson(step.toolResults)}
+                  </pre>
+                </details>
+              )}
+
+              {/* Agent message */}
+              {step.agentMessage && (
+                <div className="rounded-lg bg-[#111114] border border-white/[0.07] px-4 py-3 mb-2 prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:bg-[#0d0d10] prose-pre:border prose-pre:border-white/[0.05] prose-code:text-orange-300 prose-a:text-blue-400 prose-headings:text-zinc-100">
+                  <ReactMarkdown>{step.agentMessage}</ReactMarkdown>
+                </div>
+              )}
+
+              {/* Error */}
+              {step.errorMessage && (
+                <div className="rounded-lg bg-red-500/5 border border-red-500/20 px-4 py-3 mb-2">
+                  <p className="flex items-center gap-1.5 text-sm text-red-400">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                    {step.errorMessage}
+                  </p>
+                </div>
+              )}
+
+              {/* Page snapshot + raw data */}
+              <div className="flex items-center gap-3 mt-1">
+                {step.snapshotText && (
+                  <button
+                    onClick={() => setExpandedRaw(
+                      expandedRaw === `snapshot-${step.id}` ? null : `snapshot-${step.id}`
+                    )}
+                    className="text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors flex items-center gap-1"
+                  >
+                    <Globe className="h-3 w-3" />
+                    {expandedRaw === `snapshot-${step.id}` ? "Hide page snapshot" : "Page snapshot"}
+                  </button>
+                )}
+                <button
+                  onClick={() => setExpandedRaw(
+                    expandedRaw === `raw-${step.id}` ? null : `raw-${step.id}`
+                  )}
+                  className="text-[11px] text-zinc-600 hover:text-zinc-400 transition-colors"
+                >
+                  {expandedRaw === `raw-${step.id}` ? "Hide raw data" : "Raw data"}
+                </button>
+                <span className="text-[11px] text-zinc-700">
+                  {step.inputTokens.toLocaleString()} in · {step.outputTokens.toLocaleString()} out
+                </span>
+              </div>
+
+              {/* Page snapshot panel */}
+              {expandedRaw === `snapshot-${step.id}` && step.snapshotText && (
+                <div className="mt-2 rounded-lg bg-[#0d0d10] border border-white/[0.05] overflow-hidden">
+                  <div className="px-3 py-2 border-b border-white/[0.05] flex items-center gap-1.5">
+                    <Globe className="h-3 w-3 text-zinc-500" />
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+                      What the agent saw
+                    </span>
+                  </div>
+                  <pre className="p-3 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-zinc-400 max-h-96 overflow-y-auto">
+                    {step.snapshotText}
+                  </pre>
+                </div>
+              )}
+
+              {/* Raw data panel */}
+              {expandedRaw === `raw-${step.id}` && (
+                <div className="mt-2 rounded-lg bg-[#0d0d10] border border-white/[0.05] p-3 overflow-x-auto">
+                  {step.actions && (
+                    <div className="mb-3">
+                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-600">Actions</p>
+                      <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-zinc-400">
+                        {formatJson(step.actions)}
+                      </pre>
+                    </div>
+                  )}
+                  {step.toolResults && (
+                    <div className="mb-3">
+                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-zinc-600">Tool Results</p>
+                      <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-zinc-400">
+                        {formatJson(step.toolResults)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Extract human-readable action summaries from the JSON actions string */
+function parseActions(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    const arr = Array.isArray(parsed) ? parsed : [parsed];
+    return arr.map((a) => {
+      if (typeof a === "string") return a;
+      // Common patterns: { type: "click", selector: "..." } or { tool: "navigate", ... }
+      const name = a.type || a.tool || a.action || a.name || "action";
+      const target = a.selector || a.url || a.text || a.value || "";
+      return target ? `${name}: ${target}` : name;
+    });
+  } catch {
+    return [raw.slice(0, 80)];
+  }
+}
+
+function formatJson(str: string): string {
+  try {
+    return JSON.stringify(JSON.parse(str), null, 2);
+  } catch {
+    return str;
+  }
 }
 
 // ─── Prompt Card ──────────────────────────────────────────────────────────────

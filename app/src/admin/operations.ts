@@ -1,8 +1,9 @@
 import { HttpError } from "wasp/server";
-import type { GetAdminDashboard, GetAdminProjectDetail } from "wasp/server/operations";
+import type { GetAdminDashboard, GetAdminProjectDetail, GetAdminAgentSession } from "wasp/server/operations";
 import type {
   AdminDashboardListOutput,
   AdminProjectDetailOutput,
+  AdminAgentSessionOutput,
   AdminProjectSummary,
 } from "../shared/adminTypes";
 
@@ -170,5 +171,48 @@ export const getAdminProjectDetail: GetAdminProjectDetail<
   return {
     ...project,
     totalCost: costAgg._sum?.cost ?? 0,
+  };
+};
+
+export const getAdminAgentSession: GetAdminAgentSession<
+  { sessionId: string },
+  AdminAgentSessionOutput
+> = async (args, context) => {
+  if (!context.user) {
+    throw new HttpError(401, "Not authenticated");
+  }
+  if (!context.user.isAdmin) {
+    throw new HttpError(403, "Admin access required");
+  }
+
+  const logs = await context.entities.AgentLog.findMany({
+    where: { sessionId: args.sessionId },
+    select: {
+      id: true,
+      sessionId: true,
+      step: true,
+      goal: true,
+      pageUrl: true,
+      snapshotText: true,
+      actions: true,
+      toolResults: true,
+      agentMessage: true,
+      inputTokens: true,
+      outputTokens: true,
+      status: true,
+      errorMessage: true,
+      createdAt: true,
+    },
+    orderBy: { step: "asc" },
+  });
+
+  if (!logs.length) {
+    throw new HttpError(404, "Session not found");
+  }
+
+  return {
+    sessionId: args.sessionId,
+    goal: logs[0].goal,
+    steps: logs,
   };
 };

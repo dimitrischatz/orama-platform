@@ -253,6 +253,11 @@ query getAdminProjectDetail {
   entities: [Project, Prompt, UsageRecord, AgentLog]
 }
 
+query getAdminAgentSession {
+  fn: import { getAdminAgentSession } from "@src/admin/operations",
+  entities: [AgentLog]
+}
+
 route NotFoundRoute { path: "*", to: NotFoundPage }
 page NotFoundPage {
   component: import { NotFoundPage } from "@src/client/components/NotFoundPage"

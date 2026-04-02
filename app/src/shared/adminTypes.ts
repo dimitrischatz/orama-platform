@@ -20,6 +20,14 @@ export type AdminAgentLog = {
   createdAt: Date;
 };
 
+/** Full agent log step with conversation content */
+export type AdminAgentLogDetail = AdminAgentLog & {
+  snapshotText: string | null;
+  actions: string | null;
+  toolResults: string | null;
+  agentMessage: string | null;
+};
+
 export type AdminUsageRecord = {
   id: string;
   model: string;
@@ -90,3 +98,9 @@ export type AdminDashboardListOutput = {
 };
 
 export type AdminProjectDetailOutput = AdminProject;
+
+export type AdminAgentSessionOutput = {
+  sessionId: string;
+  goal: string;
+  steps: AdminAgentLogDetail[];
+};
