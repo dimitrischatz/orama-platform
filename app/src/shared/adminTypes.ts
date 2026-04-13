@@ -4,24 +4,28 @@ export type AdminPrompt = {
   description: string | null;
   content: string;
   type: string;
+  source: string | null;
   createdAt: Date;
+  updatedAt: Date | null;
+  updatedBy: string | null;
 };
 
 export type AdminAgentLog = {
-  id: string;
   sessionId: string;
   step: number;
   goal: string;
-  pageUrl: string | null;
   status: string;
   errorMessage: string | null;
   inputTokens: number;
   outputTokens: number;
+  skillIds: string | null;
   createdAt: Date;
 };
 
 /** Full agent log step with conversation content */
 export type AdminAgentLogDetail = AdminAgentLog & {
+  id: string;
+  pageUrl: string | null;
   snapshotText: string | null;
   actions: string | null;
   toolResults: string | null;

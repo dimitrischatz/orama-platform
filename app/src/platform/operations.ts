@@ -270,6 +270,7 @@ export const createPrompt: CreatePrompt<CreatePromptInput, Prompt> = async (
       description,
       content,
       type,
+      source: "user",
       project: { connect: { id: projectId } },
     },
   });
@@ -305,7 +306,10 @@ export const updatePrompt: UpdatePrompt<UpdatePromptInput, Prompt> = async (
     throw new HttpError(404, "Prompt not found");
   }
 
-  return context.entities.Prompt.update({ where: { id }, data });
+  return context.entities.Prompt.update({
+    where: { id },
+    data: { ...data, updatedAt: new Date(), updatedBy: "user" },
+  });
 };
 
 const deletePromptSchema = z.object({
@@ -452,6 +456,7 @@ Aim for 3-10 skills depending on the breadth of the documentation. Each skill sh
         description: skill.description,
         content: skill.content,
         type: "skill",
+        source: "user",
         project: { connect: { id: projectId } },
       },
     });

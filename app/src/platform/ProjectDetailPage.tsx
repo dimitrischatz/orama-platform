@@ -24,7 +24,6 @@ import {
   Code2,
   Copy,
   Check,
-  Brain,
 } from "lucide-react";
 import {
   Dialog,
@@ -93,7 +92,6 @@ export default function ProjectDetailPage(_props: { user: User }) {
 
   const basePrompt = project.prompts.find((p) => p.type === "base");
   const skills = project.prompts.filter((p) => p.type === "skill");
-  const memories = project.prompts.filter((p) => p.type === "memory");
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this project?")) return;
@@ -129,7 +127,6 @@ export default function ProjectDetailPage(_props: { user: User }) {
         <ProjectSettingsSection project={project} />
         <BasePromptSection projectId={project.id} basePrompt={basePrompt} />
         <SkillsSection projectId={project.id} skills={skills} />
-        <MemoriesSection memories={memories} />
         <IntegrationSection projectId={project.id} />
       </div>
     </div>
@@ -411,9 +408,16 @@ function SkillCard({
   return (
     <div className="flex items-start justify-between rounded-xl border border-white/[0.07] bg-[#18181c] p-4">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-white">
-          {skill.name}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium text-white">
+            {skill.name}
+          </p>
+          {skill.source === "agent" && (
+            <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400">
+              agent
+            </span>
+          )}
+        </div>
         {skill.description && (
           <p className="mt-1 text-xs text-zinc-500">{skill.description}</p>
         )}
@@ -602,111 +606,6 @@ function GenerateSkillsForm({
         )}
       </button>
     </form>
-  );
-}
-
-// ─── Memories ────────────────────────────────────────────────────────────────
-
-function MemoriesSection({ memories }: { memories: Prompt[] }) {
-  const { toast } = useToast();
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editContent, setEditContent] = useState("");
-
-  const handleDelete = async (id: string) => {
-    try {
-      await deletePrompt({ id });
-      toast({ title: "Memory deleted" });
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
-  };
-
-  const handleUpdate = async (id: string) => {
-    try {
-      await updatePrompt({ id, content: editContent });
-      toast({ title: "Memory updated" });
-      setEditingId(null);
-    } catch (e: any) {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
-    }
-  };
-
-  return (
-    <div className={sectionCard + " p-6"}>
-      <div className="mb-1 flex items-center gap-2">
-        <Brain className="h-5 w-5 text-orange-500" />
-        <h2 className="text-base font-semibold text-white">
-          Memories
-        </h2>
-      </div>
-      <p className="mb-6 text-sm text-zinc-500">
-        Lessons the agent has learned from previous sessions. These are automatically saved and used to improve future performance.
-      </p>
-
-      {!memories.length ? (
-        <p className="py-6 text-center text-sm text-zinc-400">
-          No memories yet — the agent will save lessons as it works.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {memories.map((m) => (
-            <div
-              key={m.id}
-              className="flex items-start gap-3 rounded-xl border border-white/[0.07] bg-[#18181c] px-4 py-3"
-            >
-              {editingId === m.id ? (
-                <div className="flex flex-1 flex-col gap-2">
-                  <textarea
-                    value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    rows={2}
-                    className={inputClass + " text-xs"}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleUpdate(m.id)}
-                      disabled={!editContent.trim()}
-                      className="rounded-md bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600 disabled:opacity-50"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="rounded-md px-3 py-1 text-xs font-medium text-zinc-500 hover:text-zinc-300"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className="flex-1 text-sm text-zinc-300">
-                    {m.content}
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => {
-                        setEditingId(m.id);
-                        setEditContent(m.content);
-                      }}
-                      className={btnGhost}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(m.id)}
-                      className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   );
 }
 

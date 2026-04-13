@@ -1,4 +1,4 @@
-import { BookOpen, Sparkles, Brain, FileText, Rocket } from "lucide-react";
+import { BookOpen, Sparkles, FileText, Rocket } from "lucide-react";
 
 const sectionCard =
   "rounded-2xl border border-white/[0.07] bg-[#111114]";
@@ -57,12 +57,9 @@ export default function DocsPage() {
             <li>
               <strong>Skills</strong> — domain knowledge loaded on demand when relevant
             </li>
-            <li>
-              <strong>Memories</strong> — lessons the agent saves automatically from past sessions
-            </li>
           </ul>
           <p>
-            Create a project, configure these three pieces, then grab the integration snippet from
+            Create a project, configure these two pieces, then grab the integration snippet from
             your project page to embed the widget.
           </p>
         </Section>
@@ -170,19 +167,6 @@ export default function DocsPage() {
           </p>
         </Section>
 
-        {/* Memories */}
-        <Section icon={Brain} title="Memories">
-          <p>
-            Memories are created automatically by the agent during sessions. When the agent
-            discovers something useful — like a form that requires fields in a specific order, or a
-            page that loads slowly — it saves that as a memory for future sessions.
-          </p>
-          <p>
-            You can view and manage memories from your project page. Delete ones that are outdated
-            or wrong, and edit ones that are almost right. Over time, memories make the agent better
-            at handling your specific app without you needing to update the base prompt.
-          </p>
-        </Section>
       </div>
     </div>
   );

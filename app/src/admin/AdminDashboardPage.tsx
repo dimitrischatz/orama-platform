@@ -13,7 +13,6 @@ import {
   Shield,
   Sparkles,
   FileText,
-  Brain,
   ArrowLeft,
   AlertCircle,
   CheckCircle2,
@@ -343,10 +342,10 @@ function ProjectDetail({
   const [tab, setTab] = useState<"prompts" | "usage" | "logs">("prompts");
   const [expandedPrompt, setExpandedPrompt] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [showErrorsOnly, setShowErrorsOnly] = useState(false);
 
   const basePrompt = project.prompts.find((p) => p.type === "base");
   const skills = project.prompts.filter((p) => p.type === "skill");
-  const memories = project.prompts.filter((p) => p.type === "memory");
   const totalCost = project.totalCost;
 
   const tabClass = (active: boolean) =>
@@ -361,16 +360,25 @@ function ProjectDetail({
     existing.push(log);
     sessionMap.set(log.sessionId, existing);
   }
-  const sessions = Array.from(sessionMap.entries()).map(([id, logs]) => ({
-    id,
-    goal: logs[0]?.goal ?? "—",
-    steps: logs.length,
-    status: logs[logs.length - 1]?.status ?? "ok",
-    totalTokens: logs.reduce((s, l) => s + l.inputTokens + l.outputTokens, 0),
-    createdAt: logs[0]?.createdAt,
-    hasError: logs.some((l) => l.status === "error"),
-    errorMessage: logs.find((l) => l.errorMessage)?.errorMessage,
-  }));
+  const sessions = Array.from(sessionMap.entries()).map(([id, logs]) => {
+    const allSkillIds = new Set<string>();
+    for (const l of logs) {
+      if (l.skillIds) {
+        try { for (const sid of JSON.parse(l.skillIds)) allSkillIds.add(sid); } catch {}
+      }
+    }
+    return {
+      id,
+      goal: logs[0]?.goal ?? "—",
+      steps: logs.length,
+      status: logs[logs.length - 1]?.status ?? "ok",
+      totalTokens: logs.reduce((s, l) => s + l.inputTokens + l.outputTokens, 0),
+      createdAt: logs[0]?.createdAt,
+      hasError: logs.some((l) => l.status === "error"),
+      errorMessage: logs.find((l) => l.errorMessage)?.errorMessage,
+      skillCount: allSkillIds.size,
+    };
+  });
 
   return (
     <div>
@@ -397,7 +405,6 @@ function ProjectDetail({
         {[
           { label: "Prompts", value: project._count.prompts },
           { label: "Requests", value: project._count.usageRecords },
-          { label: "Agent Sessions", value: sessions.length },
           { label: "Cost", value: `$${totalCost.toFixed(4)}` },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-white/[0.07] bg-[#111114] px-4 py-3">
@@ -413,10 +420,10 @@ function ProjectDetail({
           Prompts ({project._count.prompts})
         </button>
         <button className={tabClass(tab === "usage")} onClick={() => setTab("usage")}>
-          Usage ({project.usageRecords.length})
+          Usage ({project._count.usageRecords})
         </button>
         <button className={tabClass(tab === "logs")} onClick={() => setTab("logs")}>
-          Agent Logs ({sessions.length})
+          Agent Logs ({project._count.agentLogs})
         </button>
       </div>
 
@@ -462,29 +469,7 @@ function ProjectDetail({
             </div>
           )}
 
-          {/* Memories */}
-          {memories.length > 0 && (
-            <div>
-              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-300">
-                <Brain className="h-4 w-4 text-orange-500" />
-                Memories ({memories.length})
-              </h3>
-              <div className="flex flex-col gap-2">
-                {memories.map((m) => (
-                  <PromptCard
-                    key={m.id}
-                    prompt={m}
-                    expanded={expandedPrompt === m.id}
-                    onToggle={() =>
-                      setExpandedPrompt(expandedPrompt === m.id ? null : m.id)
-                    }
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!basePrompt && !skills.length && !memories.length && (
+          {!basePrompt && !skills.length && (
             <p className="py-6 text-center text-sm text-zinc-500">No prompts configured</p>
           )}
         </div>
@@ -550,11 +535,28 @@ function ProjectDetail({
         selectedSessionId ? (
           <SessionDetail
             sessionId={selectedSessionId}
+            prompts={project.prompts}
             onBack={() => setSelectedSessionId(null)}
           />
         ) : (
           <div className="flex flex-col gap-3">
-            {sessions.map((s) => (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowErrorsOnly(!showErrorsOnly)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  showErrorsOnly
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-zinc-800 text-zinc-400 hover:text-white"
+                }`}
+              >
+                <AlertCircle className="mr-1 inline h-3 w-3" />
+                Errors only
+              </button>
+              <span className="text-xs text-zinc-500">
+                {sessions.length} sessions{showErrorsOnly ? ` (${sessions.filter(s => s.hasError).length} with errors)` : ""}
+              </span>
+            </div>
+            {sessions.filter(s => !showErrorsOnly || s.hasError).map((s) => (
               <div
                 key={s.id}
                 onClick={() => setSelectedSessionId(s.id)}
@@ -576,6 +578,12 @@ function ProjectDetail({
                   </div>
                   <div className="ml-4 flex items-center gap-4 text-xs text-zinc-500 shrink-0">
                     <span>{s.steps} steps</span>
+                    {s.skillCount > 0 && (
+                      <span className="text-violet-400">
+                        <Sparkles className="mr-0.5 inline h-3 w-3" />
+                        {s.skillCount} skill{s.skillCount > 1 ? "s" : ""}
+                      </span>
+                    )}
                     <span>{s.totalTokens.toLocaleString()} tokens</span>
                     <span>
                       {s.createdAt
@@ -592,8 +600,10 @@ function ProjectDetail({
                 </div>
               </div>
             ))}
-            {!sessions.length && (
-              <p className="py-6 text-center text-sm text-zinc-500">No agent sessions</p>
+            {!sessions.filter(s => !showErrorsOnly || s.hasError).length && (
+              <p className="py-6 text-center text-sm text-zinc-500">
+                {showErrorsOnly ? "No sessions with errors" : "No agent sessions"}
+              </p>
             )}
           </div>
         )
@@ -606,9 +616,11 @@ function ProjectDetail({
 
 function SessionDetail({
   sessionId,
+  prompts,
   onBack,
 }: {
   sessionId: string;
+  prompts: AdminPrompt[];
   onBack: () => void;
 }) {
   const { data: session, isLoading } = useQuery(getAdminAgentSession, { sessionId });
@@ -684,6 +696,32 @@ function SessionDetail({
                   <p className="text-sm text-zinc-200">{step.goal}</p>
                 </div>
               )}
+
+              {/* Skills used */}
+              {step.skillIds && (() => {
+                try {
+                  const ids: string[] = JSON.parse(step.skillIds);
+                  const prevSkills = i > 0 ? session.steps[i - 1].skillIds : null;
+                  if (ids.length > 0 && step.skillIds !== prevSkills) {
+                    // Resolve skill names from project prompts
+                    const skillNames = ids.map(id => {
+                      const skill = prompts.find(p => p.id === id);
+                      return skill?.name || id.slice(0, 8);
+                    });
+                    return (
+                      <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs">
+                        <Sparkles className="h-3 w-3 text-violet-400" />
+                        {skillNames.map((name, j) => (
+                          <span key={j} className="rounded-md bg-violet-500/10 px-2 py-0.5 text-violet-300">
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  }
+                } catch {}
+                return null;
+              })()}
 
               {/* Page navigation */}
               {navigated && (
@@ -858,6 +896,15 @@ function PromptCard({
           )}
         </div>
         <div className="ml-4 flex items-center gap-3 shrink-0">
+          {prompt.source && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+              prompt.source === "agent"
+                ? "bg-violet-500/10 text-violet-400"
+                : "bg-zinc-800 text-zinc-400"
+            }`}>
+              {prompt.source}
+            </span>
+          )}
           <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
             {prompt.type}
           </span>
