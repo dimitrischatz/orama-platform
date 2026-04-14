@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import ReactMarkdown from "react-markdown";
 import { getAdminDashboard, getAdminProjectDetail, getAdminAgentSession, useQuery } from "wasp/client/operations";
 import type { User } from "wasp/entities";

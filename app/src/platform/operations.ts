@@ -15,11 +15,19 @@ import type {
   GenerateApiKey,
   RevokeApiKey,
   GenerateSkillsFromDocs,
+  GetTempPdfUploadUrl,
+  GenerateSkillsFromPdf,
 } from "wasp/server/operations";
 import * as z from "zod";
 import { ensureArgsSchemaOrThrowHttpError } from "../server/validation";
 import Firecrawl from "@mendable/firecrawl-js";
 import OpenAI from "openai";
+import { Mistral } from "@mistralai/mistralai";
+import {
+  getUploadFileSignedURLFromS3,
+  getDownloadFileSignedURLFromS3,
+  deleteFileFromS3,
+} from "../file-upload/s3Utils";
 
 // ─── Queries ────────────────────────────────────────────────────────────────
 
@@ -517,4 +525,170 @@ export const revokeApiKey: RevokeApiKey<RevokeApiKeyInput, ApiKey> = async (
   return context.entities.ApiKey.delete({
     where: { id, userId: context.user.id },
   });
+};
+
+// ─── PDF Skill Generation ───────────────────────────────────────────────────
+
+const getTempPdfUploadUrlSchema = z.object({
+  fileName: z.string().nonempty(),
+});
+
+type GetTempPdfUploadUrlInput = z.infer<typeof getTempPdfUploadUrlSchema>;
+type GetTempPdfUploadUrlOutput = {
+  s3UploadUrl: string;
+  s3UploadFields: Record<string, string>;
+  s3Key: string;
+};
+
+export const getTempPdfUploadUrl: GetTempPdfUploadUrl<
+  GetTempPdfUploadUrlInput,
+  GetTempPdfUploadUrlOutput
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { fileName } = ensureArgsSchemaOrThrowHttpError(
+    getTempPdfUploadUrlSchema,
+    rawArgs,
+  );
+
+  return getUploadFileSignedURLFromS3({
+    fileName,
+    fileType: "application/pdf",
+    userId: context.user.id,
+  });
+};
+
+const generateSkillsFromPdfSchema = z.object({
+  projectId: z.string(),
+  s3Key: z.string(),
+});
+
+type GenerateSkillsFromPdfInput = z.infer<typeof generateSkillsFromPdfSchema>;
+
+export const generateSkillsFromPdf: GenerateSkillsFromPdf<
+  GenerateSkillsFromPdfInput,
+  Prompt[]
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { projectId, s3Key } = ensureArgsSchemaOrThrowHttpError(
+    generateSkillsFromPdfSchema,
+    rawArgs,
+  );
+
+  // Verify project ownership
+  const project = await context.entities.Project.findUnique({
+    where: { id: projectId, userId: context.user.id },
+  });
+  if (!project) {
+    throw new HttpError(404, "Project not found");
+  }
+
+  // Extract text with Mistral OCR
+  const mistralApiKey = process.env.MISTRAL_API_KEY;
+  if (!mistralApiKey) {
+    throw new HttpError(500, "Missing MISTRAL_API_KEY");
+  }
+
+  const mistral = new Mistral({ apiKey: mistralApiKey });
+
+  let extractedText: string;
+  try {
+    const signedUrl = await getDownloadFileSignedURLFromS3({ s3Key });
+
+    const ocr = await mistral.ocr.process({
+      model: "mistral-ocr-latest",
+      document: {
+        type: "document_url",
+        documentUrl: signedUrl,
+      },
+      includeImageBase64: false,
+    });
+
+    const pages = ocr.pages ?? [];
+    if (pages.length === 0) {
+      throw new HttpError(422, "No text found in the PDF");
+    }
+
+    extractedText = pages.map((p: { markdown: string }) => p.markdown).join("\n\n");
+  } catch (error: any) {
+    if (error instanceof HttpError) throw error;
+    throw new HttpError(500, `PDF text extraction failed: ${error.message}`);
+  } finally {
+    try {
+      await deleteFileFromS3({ s3Key });
+    } catch {}
+  }
+
+  // Truncate to ~100k chars to stay within token limits
+  const MAX_CHARS = 100_000;
+  if (extractedText.length > MAX_CHARS) {
+    extractedText = extractedText.slice(0, MAX_CHARS);
+  }
+
+  // Ask OpenAI to generate skills from the extracted text
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.3,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: `You are an expert at analyzing documents and extracting distinct skills for an AI agent.
+
+Given document content, identify the key knowledge areas and create a set of skills. Each skill should represent a distinct topic or capability the agent needs.
+
+Return a JSON object with a "skills" array. Each skill has:
+- "name": short descriptive name (e.g. "Returns Policy", "API Authentication")
+- "description": one sentence explaining when the agent should use this skill
+- "content": the actual instructions and knowledge for this skill, written as clear directives the agent can follow. Include relevant details, steps, and rules from the document.
+
+Aim for 3-10 skills depending on the breadth of the content. Each skill should be self-contained and focused on one topic.`,
+      },
+      {
+        role: "user",
+        content: `Analyze the following document and generate skills:\n\n${extractedText}`,
+      },
+    ],
+  });
+
+  const raw = completion.choices[0]?.message?.content;
+  if (!raw) {
+    throw new HttpError(502, "Failed to generate skills from the document");
+  }
+
+  let parsed: { skills: { name: string; description: string; content: string }[] };
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new HttpError(502, "AI returned invalid JSON");
+  }
+
+  if (!Array.isArray(parsed.skills) || !parsed.skills.length) {
+    throw new HttpError(422, "AI could not identify any skills from the document");
+  }
+
+  // Bulk-create all skills
+  const created: Prompt[] = [];
+  for (const skill of parsed.skills) {
+    const prompt = await context.entities.Prompt.create({
+      data: {
+        name: skill.name,
+        description: skill.description,
+        content: skill.content,
+        type: "skill",
+        source: "user",
+        project: { connect: { id: projectId } },
+      },
+    });
+    created.push(prompt);
+  }
+
+  return created;
 };

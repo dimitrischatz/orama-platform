@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import {
   getProjectById,
   updateProject,
@@ -8,6 +8,8 @@ import {
   updatePrompt,
   deletePrompt,
   generateSkillsFromDocs,
+  getTempPdfUploadUrl,
+  generateSkillsFromPdf,
   useQuery,
 } from "wasp/client/operations";
 import type { User, Prompt } from "wasp/entities";
@@ -24,6 +26,7 @@ import {
   Code2,
   Copy,
   Check,
+  FileUp,
 } from "lucide-react";
 import {
   Dialog,
@@ -301,6 +304,7 @@ function SkillsSection({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Prompt | null>(null);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
 
   return (
     <div className={sectionCard + " p-6"}>
@@ -329,6 +333,23 @@ function SkillsSection({
               <GenerateSkillsForm
                 projectId={projectId}
                 onDone={() => setGenerateDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={pdfDialogOpen} onOpenChange={setPdfDialogOpen}>
+            <DialogTrigger asChild>
+              <button className={btnOutline}>
+                <FileUp className="h-4 w-4" />
+                Upload PDF
+              </button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Generate Skills from PDF</DialogTitle>
+              </DialogHeader>
+              <PdfUploadForm
+                projectId={projectId}
+                onDone={() => setPdfDialogOpen(false)}
               />
             </DialogContent>
           </Dialog>
@@ -535,6 +556,139 @@ function SkillForm({
         className={btnPrimary}
       >
         {saving ? "Saving..." : skill ? "Update Skill" : "Create Skill"}
+      </button>
+    </form>
+  );
+}
+
+function PdfUploadForm({
+  projectId,
+  onDone,
+}: {
+  projectId: string;
+  onDone: () => void;
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [status, setStatus] = useState<"idle" | "uploading" | "extracting">("idle");
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) return;
+
+    setUploading(true);
+    setStatus("uploading");
+
+    try {
+      // Step 1: get presigned upload URL
+      const { s3UploadUrl, s3UploadFields, s3Key } = await getTempPdfUploadUrl({
+        fileName: file.name,
+      });
+
+      // Step 2: upload PDF to S3 via presigned POST
+      const formData = new FormData();
+      Object.entries(s3UploadFields).forEach(([k, v]) =>
+        formData.append(k, v as string),
+      );
+      formData.append("file", file);
+
+      const uploadRes = await fetch(s3UploadUrl, {
+        method: "POST",
+        body: formData,
+      });
+      if (!uploadRes.ok) {
+        throw new Error("Failed to upload file to storage");
+      }
+
+      // Step 3: extract text + generate skills
+      setStatus("extracting");
+      const skills = await generateSkillsFromPdf({ projectId, s3Key });
+
+      toast({
+        title: `${skills.length} skill${skills.length === 1 ? "" : "s"} generated`,
+      });
+      onDone();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      setStatus("idle");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-4">
+      <p className="text-sm text-zinc-500">
+        Upload a PDF document and we'll extract its content using Mistral OCR,
+        then automatically generate skills for your agent.
+      </p>
+      <div>
+        <label htmlFor="pdf-file" className={labelClass}>
+          PDF Document
+        </label>
+        <div
+          className={
+            "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/[0.12] bg-[#18181c] p-8 transition-colors " +
+            (file ? "border-orange-500/40" : "hover:border-white/20")
+          }
+        >
+          {file ? (
+            <>
+              <FileUp className="h-8 w-8 text-orange-400" />
+              <p className="text-sm font-medium text-white">{file.name}</p>
+              <p className="text-xs text-zinc-500">
+                {(file.size / 1024 / 1024).toFixed(2)} MB
+              </p>
+              <button
+                type="button"
+                onClick={() => setFile(null)}
+                className="text-xs text-zinc-400 underline hover:text-white"
+              >
+                Remove
+              </button>
+            </>
+          ) : (
+            <>
+              <FileUp className="h-8 w-8 text-zinc-500" />
+              <p className="text-sm text-zinc-400">
+                Drag & drop or{" "}
+                <label
+                  htmlFor="pdf-file"
+                  className="cursor-pointer text-orange-400 underline"
+                >
+                  browse
+                </label>
+              </p>
+              <p className="text-xs text-zinc-600">PDF up to 5 MB</p>
+            </>
+          )}
+          <input
+            id="pdf-file"
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            disabled={uploading}
+          />
+        </div>
+      </div>
+      <button
+        type="submit"
+        disabled={uploading || !file}
+        className={btnPrimary}
+      >
+        {uploading ? (
+          <span className="inline-flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {status === "uploading" ? "Uploading..." : "Extracting & generating..."}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            Generate Skills
+          </span>
+        )}
       </button>
     </form>
   );
