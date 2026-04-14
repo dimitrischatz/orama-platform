@@ -561,6 +561,8 @@ function SkillForm({
   );
 }
 
+type FileStatus = "pending" | "uploading" | "uploaded" | "error";
+
 function PdfUploadForm({
   projectId,
   onDone,
@@ -568,87 +570,107 @@ function PdfUploadForm({
   projectId: string;
   onDone: () => void;
 }) {
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [status, setStatus] = useState<"idle" | "uploading" | "extracting">("idle");
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileStatuses, setFileStatuses] = useState<Record<string, FileStatus>>({});
+  const [globalStatus, setGlobalStatus] = useState<"idle" | "analyzing">("idle");
   const { toast } = useToast();
+
+  const isProcessing = globalStatus === "analyzing" || Object.values(fileStatuses).some((s) => s === "uploading");
+
+  const addFiles = (incoming: FileList | null) => {
+    if (!incoming) return;
+    const pdfs = Array.from(incoming).filter((f) => f.type === "application/pdf");
+    setFiles((prev) => {
+      const existing = new Set(prev.map((f) => f.name));
+      return [...prev, ...pdfs.filter((f) => !existing.has(f.name))];
+    });
+  };
+
+  const removeFile = (name: string) => {
+    setFiles((prev) => prev.filter((f) => f.name !== name));
+    setFileStatuses((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  };
+
+  const setFileStatus = (name: string, status: FileStatus) =>
+    setFileStatuses((prev) => ({ ...prev, [name]: status }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (files.length === 0) return;
 
-    setUploading(true);
-    setStatus("uploading");
+    // Reset statuses
+    setFileStatuses(Object.fromEntries(files.map((f) => [f.name, "pending"])));
 
     try {
-      // Step 1: get presigned upload URL
-      const { s3UploadUrl, s3UploadFields, s3Key } = await getTempPdfUploadUrl({
-        fileName: file.name,
-      });
-
-      // Step 2: upload PDF to S3 via presigned POST
-      const formData = new FormData();
-      Object.entries(s3UploadFields).forEach(([k, v]) =>
-        formData.append(k, v as string),
+      // Step 1: get presigned URLs for all files in parallel
+      const uploadMeta = await Promise.all(
+        files.map((f) => getTempPdfUploadUrl({ fileName: f.name })),
       );
-      formData.append("file", file);
 
-      const uploadRes = await fetch(s3UploadUrl, {
-        method: "POST",
-        body: formData,
-      });
-      if (!uploadRes.ok) {
-        throw new Error("Failed to upload file to storage");
-      }
+      // Step 2: upload all PDFs to S3 in parallel, tracking per-file status
+      await Promise.all(
+        files.map(async (file, i) => {
+          setFileStatus(file.name, "uploading");
+          const { s3UploadUrl, s3UploadFields } = uploadMeta[i];
+          const formData = new FormData();
+          Object.entries(s3UploadFields).forEach(([k, v]) =>
+            formData.append(k, v as string),
+          );
+          formData.append("file", file);
+          const res = await fetch(s3UploadUrl, { method: "POST", body: formData });
+          if (!res.ok) {
+            setFileStatus(file.name, "error");
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+          setFileStatus(file.name, "uploaded");
+        }),
+      );
 
-      // Step 3: extract text + generate skills
-      setStatus("extracting");
-      const skills = await generateSkillsFromPdf({ projectId, s3Key });
+      // Step 3: extract text + generate/enhance skills
+      setGlobalStatus("analyzing");
+      const s3Keys = uploadMeta.map((m) => m.s3Key);
+      const skills = await generateSkillsFromPdf({ projectId, s3Keys });
 
       toast({
-        title: `${skills.length} skill${skills.length === 1 ? "" : "s"} generated`,
+        title: `${skills.length} skill${skills.length === 1 ? "" : "s"} generated or enhanced`,
       });
       onDone();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
-      setUploading(false);
-      setStatus("idle");
+      setGlobalStatus("idle");
     }
   };
 
+  const fileStatusIcon = (name: string) => {
+    const s = fileStatuses[name];
+    if (s === "uploading") return <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-orange-400" />;
+    if (s === "uploaded") return <span className="shrink-0 text-xs text-green-400">✓</span>;
+    if (s === "error") return <span className="shrink-0 text-xs text-red-400">✗</span>;
+    return null;
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 pt-4">
+    <form onSubmit={handleSubmit} className="flex max-h-[70vh] flex-col gap-5 overflow-y-auto pt-4">
       <p className="text-sm text-zinc-500">
-        Upload a PDF document and we'll extract its content using Mistral OCR,
-        then automatically generate skills for your agent.
+        Select one or more PDF documents to analyze. Any skills that overlap
+        with existing ones will be automatically enriched rather than replaced.
       </p>
       <div>
         <label htmlFor="pdf-file" className={labelClass}>
-          PDF Document
+          PDF Documents
         </label>
         <div
           className={
-            "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/[0.12] bg-[#18181c] p-8 transition-colors " +
-            (file ? "border-orange-500/40" : "hover:border-white/20")
+            "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/[0.12] bg-[#18181c] transition-colors " +
+            (files.length > 0 ? "border-orange-500/40 p-4" : "p-8 hover:border-white/20")
           }
         >
-          {file ? (
-            <>
-              <FileUp className="h-8 w-8 text-orange-400" />
-              <p className="text-sm font-medium text-white">{file.name}</p>
-              <p className="text-xs text-zinc-500">
-                {(file.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-              <button
-                type="button"
-                onClick={() => setFile(null)}
-                className="text-xs text-zinc-400 underline hover:text-white"
-              >
-                Remove
-              </button>
-            </>
-          ) : (
+          {files.length === 0 ? (
             <>
               <FileUp className="h-8 w-8 text-zinc-500" />
               <p className="text-sm text-zinc-400">
@@ -660,28 +682,68 @@ function PdfUploadForm({
                   browse
                 </label>
               </p>
-              <p className="text-xs text-zinc-600">PDF up to 5 MB</p>
+              <p className="text-xs text-zinc-600">PDF files up to 5 MB each</p>
             </>
+          ) : (
+            <ul className="w-full max-h-48 space-y-2 overflow-y-auto pr-1">
+              {files.map((f) => (
+                <li
+                  key={f.name}
+                  className="flex min-w-0 items-center gap-2 rounded-lg bg-white/5 px-3 py-2"
+                >
+                  {fileStatusIcon(f.name)}
+                  <span className="min-w-0 flex-1 truncate text-sm text-white">{f.name}</span>
+                  <span className="shrink-0 text-xs text-zinc-500">
+                    {(f.size / 1024 / 1024).toFixed(2)} MB
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(f.name)}
+                    disabled={isProcessing}
+                    className="shrink-0 text-xs text-zinc-400 underline hover:text-white disabled:opacity-40"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+              <li className="pt-1">
+                <label
+                  htmlFor="pdf-file"
+                  className="cursor-pointer text-xs text-orange-400 underline"
+                >
+                  + Add more
+                </label>
+              </li>
+            </ul>
           )}
           <input
             id="pdf-file"
             type="file"
             accept="application/pdf"
+            multiple
             className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            disabled={uploading}
+            onChange={(e) => addFiles(e.target.files)}
+            disabled={isProcessing}
           />
         </div>
       </div>
+
+      {globalStatus === "analyzing" && (
+        <p className="text-center text-xs text-zinc-400">
+          <Loader2 className="mr-1 inline h-3 w-3 animate-spin" />
+          Extracting content and generating skills...
+        </p>
+      )}
+
       <button
         type="submit"
-        disabled={uploading || !file}
+        disabled={isProcessing || files.length === 0}
         className={btnPrimary}
       >
-        {uploading ? (
+        {isProcessing ? (
           <span className="inline-flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            {status === "uploading" ? "Uploading..." : "Extracting & generating..."}
+            {globalStatus === "analyzing" ? "Generating skills..." : "Uploading..."}
           </span>
         ) : (
           <span className="inline-flex items-center gap-2">
