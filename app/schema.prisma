@@ -138,6 +138,7 @@ model Prompt {
   source      String?   // "user" | "agent" — who created this prompt
   updatedAt   DateTime? // last edit timestamp
   updatedBy   String?   // "user" | "agent" — who last edited
+  embedding   Json?     // vector embedding for semantic search (stored as float array)
 
   project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId   String

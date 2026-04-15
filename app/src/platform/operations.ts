@@ -29,6 +29,23 @@ import {
   deleteFileFromS3,
 } from "../file-upload/s3Utils";
 
+// ─── Embedding helper ────────────────────────────────────────────────────────
+
+async function embedSkillText(name: string, description?: string, content?: string): Promise<number[] | null> {
+  try {
+    const text = [name, description || "", content || ""].filter(Boolean).join("\n");
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+    const response = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+    });
+    return response.data[0].embedding;
+  } catch (e) {
+    console.error("[embedSkillText] failed:", e);
+    return null;
+  }
+}
+
 // ─── Queries ────────────────────────────────────────────────────────────────
 
 export const getProjects: GetProjects<void, Project[]> = async (
@@ -272,6 +289,7 @@ export const createPrompt: CreatePrompt<CreatePromptInput, Prompt> = async (
     }
   }
 
+  const embedding = type === "skill" ? await embedSkillText(name, description, content) : null;
   return context.entities.Prompt.create({
     data: {
       name,
@@ -279,6 +297,7 @@ export const createPrompt: CreatePrompt<CreatePromptInput, Prompt> = async (
       content,
       type,
       source: "user",
+      ...(embedding && { embedding }),
       project: { connect: { id: projectId } },
     },
   });
@@ -314,9 +333,19 @@ export const updatePrompt: UpdatePrompt<UpdatePromptInput, Prompt> = async (
     throw new HttpError(404, "Prompt not found");
   }
 
+  // Re-embed if any text field changed on a skill
+  let embedding: number[] | null = null;
+  if (prompt.type === "skill" && (data.name || data.description || data.content)) {
+    embedding = await embedSkillText(
+      data.name || prompt.name,
+      data.description ?? prompt.description ?? undefined,
+      data.content || prompt.content,
+    );
+  }
+
   return context.entities.Prompt.update({
     where: { id },
-    data: { ...data, updatedAt: new Date(), updatedBy: "user" },
+    data: { ...data, ...(embedding && { embedding }), updatedAt: new Date(), updatedBy: "user" },
   });
 };
 
@@ -458,6 +487,7 @@ Aim for 3-10 skills depending on the breadth of the documentation. Each skill sh
   // Bulk-create all skills
   const created: Prompt[] = [];
   for (const skill of parsed.skills) {
+    const embedding = await embedSkillText(skill.name, skill.description, skill.content);
     const prompt = await context.entities.Prompt.create({
       data: {
         name: skill.name,
@@ -465,6 +495,7 @@ Aim for 3-10 skills depending on the breadth of the documentation. Each skill sh
         content: skill.content,
         type: "skill",
         source: "user",
+        ...(embedding && { embedding }),
         project: { connect: { id: projectId } },
       },
     });
@@ -732,6 +763,7 @@ Return a JSON object with a "skills" array. Each skill has:
   const upserted: Prompt[] = [];
   for (const skill of deduplicatedSkills) {
     const existing = existingByName.get(skill.name.toLowerCase());
+    const embedding = await embedSkillText(skill.name, skill.description, skill.content);
     if (existing) {
       // Enhance existing skill
       const updated = await context.entities.Prompt.update({
@@ -740,6 +772,7 @@ Return a JSON object with a "skills" array. Each skill has:
           description: skill.description,
           content: skill.content,
           updatedBy: "user",
+          ...(embedding && { embedding }),
         },
       });
       upserted.push(updated);
@@ -752,6 +785,7 @@ Return a JSON object with a "skills" array. Each skill has:
           content: skill.content,
           type: "skill",
           source: "user",
+          ...(embedding && { embedding }),
           project: { connect: { id: projectId } },
         },
       });
