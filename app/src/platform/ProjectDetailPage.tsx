@@ -27,6 +27,8 @@ import {
   Copy,
   Check,
   FileUp,
+  Search,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -304,7 +306,18 @@ function SkillsSection({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Prompt | null>(null);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
-  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [generateTab, setGenerateTab] = useState<"link" | "pdf">("link");
+  const [search, setSearch] = useState("");
+
+  const filtered = skills.filter((s) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      s.name.toLowerCase().includes(q) ||
+      (s.description ?? "").toLowerCase().includes(q) ||
+      s.content.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className={sectionCard + " p-6"}>
@@ -314,11 +327,17 @@ function SkillsSection({
           <h2 className="text-base font-semibold text-white">
             Skills
           </h2>
+          <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-zinc-400">
+            {skills.length}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <Dialog
             open={generateDialogOpen}
-            onOpenChange={setGenerateDialogOpen}
+            onOpenChange={(open) => {
+              setGenerateDialogOpen(open);
+              if (!open) setGenerateTab("link");
+            }}
           >
             <DialogTrigger asChild>
               <button className={btnOutline}>
@@ -328,29 +347,41 @@ function SkillsSection({
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Auto-generate Skills from Docs</DialogTitle>
+                <DialogTitle>Auto-generate Skills</DialogTitle>
               </DialogHeader>
-              <GenerateSkillsForm
-                projectId={projectId}
-                onDone={() => setGenerateDialogOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
-          <Dialog open={pdfDialogOpen} onOpenChange={setPdfDialogOpen}>
-            <DialogTrigger asChild>
-              <button className={btnOutline}>
-                <FileUp className="h-4 w-4" />
-                Upload PDF
-              </button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Generate Skills from PDF</DialogTitle>
-              </DialogHeader>
-              <PdfUploadForm
-                projectId={projectId}
-                onDone={() => setPdfDialogOpen(false)}
-              />
+              <div className="flex gap-1 rounded-full border border-white/[0.07] p-1">
+                <button
+                  className={`flex-1 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                    generateTab === "link"
+                      ? "bg-orange-500 text-white"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                  onClick={() => setGenerateTab("link")}
+                >
+                  From Link
+                </button>
+                <button
+                  className={`flex-1 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                    generateTab === "pdf"
+                      ? "bg-orange-500 text-white"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                  onClick={() => setGenerateTab("pdf")}
+                >
+                  From PDF
+                </button>
+              </div>
+              {generateTab === "link" ? (
+                <GenerateSkillsForm
+                  projectId={projectId}
+                  onDone={() => setGenerateDialogOpen(false)}
+                />
+              ) : (
+                <PdfUploadForm
+                  projectId={projectId}
+                  onDone={() => setGenerateDialogOpen(false)}
+                />
+              )}
             </DialogContent>
           </Dialog>
           <Dialog
@@ -384,15 +415,39 @@ function SkillsSection({
           </Dialog>
         </div>
       </div>
-      <p className="mb-6 text-sm text-zinc-500">
+      <p className="mb-4 text-sm text-zinc-500">
         Modular knowledge chunks the agent can pull in contextually.
       </p>
 
+      {skills.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search skills by name, description, or content..."
+            className={inputClass + " pl-9 pr-8"}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {!skills.length ? (
         <p className="py-6 text-center text-sm text-zinc-400">No skills yet</p>
+      ) : filtered.length === 0 ? (
+        <p className="py-6 text-center text-sm text-zinc-400">
+          No skills match "{search}"
+        </p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {skills.map((skill) => (
+        <div className="grid max-h-[32rem] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
+          {filtered.map((skill) => (
             <SkillCard
               key={skill.id}
               skill={skill}
@@ -427,35 +482,37 @@ function SkillCard({
   };
 
   return (
-    <div className="flex items-start justify-between rounded-xl border border-white/[0.07] bg-[#18181c] p-4">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-white">
-            {skill.name}
-          </p>
-          {skill.source === "agent" && (
-            <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400">
-              agent
-            </span>
-          )}
+    <div className="group flex flex-col justify-between rounded-xl border border-white/[0.07] bg-[#18181c] p-4 transition-colors hover:border-white/[0.12]">
+      <div className="min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate text-sm font-medium text-white">
+              {skill.name}
+            </p>
+            {skill.source === "agent" && (
+              <span className="shrink-0 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400">
+                agent
+              </span>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button onClick={onEdit} className={btnGhost}>
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
         {skill.description && (
-          <p className="mt-1 text-xs text-zinc-500">{skill.description}</p>
+          <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{skill.description}</p>
         )}
-        <p className="mt-2 line-clamp-2 font-mono text-xs text-zinc-400">
+        <p className="mt-2 line-clamp-2 font-mono text-[11px] leading-relaxed text-zinc-400">
           {skill.content}
         </p>
-      </div>
-      <div className="ml-4 flex items-center gap-1">
-        <button onClick={onEdit} className={btnGhost}>
-          <Pencil className="h-4 w-4" />
-        </button>
-        <button
-          onClick={handleDelete}
-          className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
       </div>
     </div>
   );
