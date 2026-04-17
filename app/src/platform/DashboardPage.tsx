@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { getProjects, useQuery } from "wasp/client/operations";
 import { routes } from "wasp/client/router";
 import type { User } from "wasp/entities";

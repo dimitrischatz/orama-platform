@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 import { StoreProvider } from './context/StoreContext';
 import { OramaProvider } from '@orama-agent/sdk';
 

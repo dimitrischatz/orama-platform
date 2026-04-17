@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { verifyEmail } from "wasp/client/auth";
 import { Link, routes } from "wasp/client/router";
 import { AuthPageLayout } from "../AuthPageLayout";

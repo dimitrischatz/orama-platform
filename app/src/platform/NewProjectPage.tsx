@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { createProject } from "wasp/client/operations";
 import type { User } from "wasp/entities";
 import { ArrowLeft } from "lucide-react";

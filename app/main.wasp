@@ -1,6 +1,6 @@
 app OpenSaaS {
   wasp: {
-    version: "^0.20.0"
+    version: "^0.21.0"
   },
 
   title: "Orama",
@@ -351,6 +351,16 @@ action deletePrompt {
 
 action generateSkillsFromDocs {
   fn: import { generateSkillsFromDocs } from "@src/platform/operations",
+  entities: [Project, Prompt]
+}
+
+action getTempPdfUploadUrl {
+  fn: import { getTempPdfUploadUrl } from "@src/platform/operations",
+  entities: [Project]
+}
+
+action generateSkillsFromPdf {
+  fn: import { generateSkillsFromPdf } from "@src/platform/operations",
   entities: [Project, Prompt]
 }
 

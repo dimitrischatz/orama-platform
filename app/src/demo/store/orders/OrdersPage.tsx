@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { useStore } from '../context/StoreContext';
 import { StatusBadge } from '../components/StatusBadge';
 import type { OrderStatus } from '../types';

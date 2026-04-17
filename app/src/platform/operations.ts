@@ -15,11 +15,36 @@ import type {
   GenerateApiKey,
   RevokeApiKey,
   GenerateSkillsFromDocs,
+  GetTempPdfUploadUrl,
+  GenerateSkillsFromPdf,
 } from "wasp/server/operations";
 import * as z from "zod";
 import { ensureArgsSchemaOrThrowHttpError } from "../server/validation";
 import Firecrawl from "@mendable/firecrawl-js";
 import OpenAI from "openai";
+import { Mistral } from "@mistralai/mistralai";
+import {
+  getUploadFileSignedURLFromS3,
+  getDownloadFileSignedURLFromS3,
+  deleteFileFromS3,
+} from "../file-upload/s3Utils";
+
+// ─── Embedding helper ────────────────────────────────────────────────────────
+
+async function embedSkillText(name: string, description?: string, content?: string): Promise<number[] | null> {
+  try {
+    const text = [name, description || "", content || ""].filter(Boolean).join("\n");
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+    const response = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+    });
+    return response.data[0].embedding;
+  } catch (e) {
+    console.error("[embedSkillText] failed:", e);
+    return null;
+  }
+}
 
 // ─── Queries ────────────────────────────────────────────────────────────────
 
@@ -264,6 +289,7 @@ export const createPrompt: CreatePrompt<CreatePromptInput, Prompt> = async (
     }
   }
 
+  const embedding = type === "skill" ? await embedSkillText(name, description, content) : null;
   return context.entities.Prompt.create({
     data: {
       name,
@@ -271,6 +297,7 @@ export const createPrompt: CreatePrompt<CreatePromptInput, Prompt> = async (
       content,
       type,
       source: "user",
+      ...(embedding && { embedding }),
       project: { connect: { id: projectId } },
     },
   });
@@ -306,9 +333,19 @@ export const updatePrompt: UpdatePrompt<UpdatePromptInput, Prompt> = async (
     throw new HttpError(404, "Prompt not found");
   }
 
+  // Re-embed if any text field changed on a skill
+  let embedding: number[] | null = null;
+  if (prompt.type === "skill" && (data.name || data.description || data.content)) {
+    embedding = await embedSkillText(
+      data.name || prompt.name,
+      data.description ?? prompt.description ?? undefined,
+      data.content || prompt.content,
+    );
+  }
+
   return context.entities.Prompt.update({
     where: { id },
-    data: { ...data, updatedAt: new Date(), updatedBy: "user" },
+    data: { ...data, ...(embedding && { embedding }), updatedAt: new Date(), updatedBy: "user" },
   });
 };
 
@@ -450,6 +487,7 @@ Aim for 3-10 skills depending on the breadth of the documentation. Each skill sh
   // Bulk-create all skills
   const created: Prompt[] = [];
   for (const skill of parsed.skills) {
+    const embedding = await embedSkillText(skill.name, skill.description, skill.content);
     const prompt = await context.entities.Prompt.create({
       data: {
         name: skill.name,
@@ -457,6 +495,7 @@ Aim for 3-10 skills depending on the breadth of the documentation. Each skill sh
         content: skill.content,
         type: "skill",
         source: "user",
+        ...(embedding && { embedding }),
         project: { connect: { id: projectId } },
       },
     });
@@ -517,4 +556,242 @@ export const revokeApiKey: RevokeApiKey<RevokeApiKeyInput, ApiKey> = async (
   return context.entities.ApiKey.delete({
     where: { id, userId: context.user.id },
   });
+};
+
+// ─── PDF Skill Generation ───────────────────────────────────────────────────
+
+const getTempPdfUploadUrlSchema = z.object({
+  fileName: z.string().nonempty(),
+});
+
+type GetTempPdfUploadUrlInput = z.infer<typeof getTempPdfUploadUrlSchema>;
+type GetTempPdfUploadUrlOutput = {
+  s3UploadUrl: string;
+  s3UploadFields: Record<string, string>;
+  s3Key: string;
+};
+
+export const getTempPdfUploadUrl: GetTempPdfUploadUrl<
+  GetTempPdfUploadUrlInput,
+  GetTempPdfUploadUrlOutput
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { fileName } = ensureArgsSchemaOrThrowHttpError(
+    getTempPdfUploadUrlSchema,
+    rawArgs,
+  );
+
+  return getUploadFileSignedURLFromS3({
+    fileName,
+    fileType: "application/pdf",
+    userId: context.user.id,
+  });
+};
+
+const generateSkillsFromPdfSchema = z.object({
+  projectId: z.string(),
+  s3Keys: z.array(z.string()).min(1),
+});
+
+type GenerateSkillsFromPdfInput = z.infer<typeof generateSkillsFromPdfSchema>;
+
+export const generateSkillsFromPdf: GenerateSkillsFromPdf<
+  GenerateSkillsFromPdfInput,
+  Prompt[]
+> = async (rawArgs, context) => {
+  if (!context.user) {
+    throw new HttpError(401);
+  }
+
+  const { projectId, s3Keys } = ensureArgsSchemaOrThrowHttpError(
+    generateSkillsFromPdfSchema,
+    rawArgs,
+  );
+
+  // Verify project ownership
+  const project = await context.entities.Project.findUnique({
+    where: { id: projectId, userId: context.user.id },
+  });
+  if (!project) {
+    throw new HttpError(404, "Project not found");
+  }
+
+  // Load existing skills for this project so we can enhance instead of duplicate
+  const existingSkills = await context.entities.Prompt.findMany({
+    where: { projectId, type: "skill" },
+    select: { id: true, name: true, description: true, content: true },
+  });
+
+  // Extract text from all PDFs with Mistral OCR
+  const mistralApiKey = process.env.MISTRAL_API_KEY;
+  if (!mistralApiKey) {
+    throw new HttpError(500, "Missing MISTRAL_API_KEY");
+  }
+
+  const mistral = new Mistral({ apiKey: mistralApiKey });
+
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  const MAX_CHARS = 100_000;
+
+  const generateSkillsForText = async (text: string) => {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert at analyzing documents and extracting distinct skills for an AI agent.
+
+Given document content, identify the key knowledge areas and create a set of skills. Each skill should represent a distinct topic or capability the agent needs.
+
+Return a JSON object with a "skills" array. Each skill has:
+- "name": short descriptive name (e.g. "Returns Policy", "API Authentication")
+- "description": one sentence explaining when the agent should use this skill
+- "content": the actual instructions and knowledge for this skill, written as clear directives the agent can follow. Include relevant details, steps, and rules from the document.
+
+Aim for 3-10 skills depending on the breadth of the content. Each skill should be self-contained and focused on one topic.`,
+        },
+        {
+          role: "user",
+          content: `Analyze the following document and generate skills:\n\n${text}`,
+        },
+      ],
+    });
+
+    const raw = completion.choices[0]?.message?.content;
+    if (!raw) return [];
+    try {
+      const p = JSON.parse(raw);
+      return Array.isArray(p.skills) ? p.skills : [];
+    } catch {
+      return [];
+    }
+  };
+
+  // Process each PDF independently in parallel: OCR + skill generation per file
+  const allSkills: { name: string; description: string; content: string }[] = [];
+
+  try {
+    const results = await Promise.allSettled(
+      s3Keys.map(async (s3Key) => {
+        const signedUrl = await getDownloadFileSignedURLFromS3({ s3Key });
+        const ocr = await mistral.ocr.process({
+          model: "mistral-ocr-latest",
+          document: { type: "document_url", documentUrl: signedUrl },
+          includeImageBase64: false,
+        });
+        const pages = ocr.pages ?? [];
+        if (pages.length === 0) return [];
+        let text = pages.map((p: { markdown: string }) => p.markdown).join("\n\n");
+        if (text.length > MAX_CHARS) text = text.slice(0, MAX_CHARS);
+        return generateSkillsForText(text);
+      }),
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        allSkills.push(...result.value);
+      }
+    }
+  } finally {
+    for (const s3Key of s3Keys) {
+      try { await deleteFileFromS3({ s3Key }); } catch {}
+    }
+  }
+
+  if (allSkills.length === 0) {
+    throw new HttpError(422, "No skills could be extracted from the uploaded PDFs");
+  }
+
+  // Semantically deduplicate and merge skills across all files
+  let deduplicatedSkills = allSkills;
+  if (allSkills.length > 1) {
+    const skillsJson = JSON.stringify(allSkills, null, 2);
+    const dedupeCompletion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert at organizing knowledge for an AI agent.
+
+You will receive a list of skills extracted from multiple documents. Your job is to identify and merge only near-duplicate skills — ones that are essentially the same process or policy under a slightly different name.
+
+Merging rules (strict):
+- Only merge skills that are near-identical in scope (e.g. "Returns Policy" and "Return Process" cover the exact same thing).
+- Do NOT merge skills that are merely related or belong to the same domain (e.g. "Payment Methods" and "Checkout Process" must stay separate).
+- When in doubt, keep skills separate.
+
+When merging:
+- Workflow steps are the most important part — preserve every step from every version, in full detail. Never summarize, shorten, or drop a step.
+- Combine any additional rules, conditions, or notes from all merged versions.
+- Choose the most descriptive name.
+
+Return a JSON object with a "skills" array. Each skill has:
+- "name": short descriptive name
+- "description": one sentence explaining when the agent should use this skill
+- "content": the full instructions including all workflow steps, written as clear directives`,
+        },
+        {
+          role: "user",
+          content: `Deduplicate and merge the following skills:\n\n${skillsJson}`,
+        },
+      ],
+    });
+
+    const dedupeRaw = dedupeCompletion.choices[0]?.message?.content;
+    if (dedupeRaw) {
+      try {
+        const p = JSON.parse(dedupeRaw);
+        if (Array.isArray(p.skills) && p.skills.length > 0) {
+          deduplicatedSkills = p.skills;
+        }
+      } catch {}
+    }
+  }
+
+  // Build a lookup map of existing skills by lowercase name for matching
+  const existingByName = new Map(
+    existingSkills.map((s) => [s.name.toLowerCase(), s]),
+  );
+
+  const upserted: Prompt[] = [];
+  for (const skill of deduplicatedSkills) {
+    const existing = existingByName.get(skill.name.toLowerCase());
+    const embedding = await embedSkillText(skill.name, skill.description, skill.content);
+    if (existing) {
+      // Enhance existing skill
+      const updated = await context.entities.Prompt.update({
+        where: { id: existing.id },
+        data: {
+          description: skill.description,
+          content: skill.content,
+          updatedBy: "user",
+          ...(embedding && { embedding }),
+        },
+      });
+      upserted.push(updated);
+    } else {
+      // Create new skill
+      const created = await context.entities.Prompt.create({
+        data: {
+          name: skill.name,
+          description: skill.description,
+          content: skill.content,
+          type: "skill",
+          source: "user",
+          ...(embedding && { embedding }),
+          project: { connect: { id: projectId } },
+        },
+      });
+      upserted.push(created);
+    }
+  }
+
+  return upserted;
 };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router";
 import {
   getProjectById,
   updateProject,
@@ -8,6 +8,8 @@ import {
   updatePrompt,
   deletePrompt,
   generateSkillsFromDocs,
+  getTempPdfUploadUrl,
+  generateSkillsFromPdf,
   useQuery,
 } from "wasp/client/operations";
 import type { User, Prompt } from "wasp/entities";
@@ -24,6 +26,9 @@ import {
   Code2,
   Copy,
   Check,
+  FileUp,
+  Search,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -301,6 +306,18 @@ function SkillsSection({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Prompt | null>(null);
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [generateTab, setGenerateTab] = useState<"link" | "pdf">("link");
+  const [search, setSearch] = useState("");
+
+  const filtered = skills.filter((s) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      s.name.toLowerCase().includes(q) ||
+      (s.description ?? "").toLowerCase().includes(q) ||
+      s.content.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className={sectionCard + " p-6"}>
@@ -310,11 +327,17 @@ function SkillsSection({
           <h2 className="text-base font-semibold text-white">
             Skills
           </h2>
+          <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs text-zinc-400">
+            {skills.length}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <Dialog
             open={generateDialogOpen}
-            onOpenChange={setGenerateDialogOpen}
+            onOpenChange={(open) => {
+              setGenerateDialogOpen(open);
+              if (!open) setGenerateTab("link");
+            }}
           >
             <DialogTrigger asChild>
               <button className={btnOutline}>
@@ -324,12 +347,41 @@ function SkillsSection({
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Auto-generate Skills from Docs</DialogTitle>
+                <DialogTitle>Auto-generate Skills</DialogTitle>
               </DialogHeader>
-              <GenerateSkillsForm
-                projectId={projectId}
-                onDone={() => setGenerateDialogOpen(false)}
-              />
+              <div className="flex gap-1 rounded-full border border-white/[0.07] p-1">
+                <button
+                  className={`flex-1 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                    generateTab === "link"
+                      ? "bg-orange-500 text-white"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                  onClick={() => setGenerateTab("link")}
+                >
+                  From Link
+                </button>
+                <button
+                  className={`flex-1 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                    generateTab === "pdf"
+                      ? "bg-orange-500 text-white"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                  onClick={() => setGenerateTab("pdf")}
+                >
+                  From PDF
+                </button>
+              </div>
+              {generateTab === "link" ? (
+                <GenerateSkillsForm
+                  projectId={projectId}
+                  onDone={() => setGenerateDialogOpen(false)}
+                />
+              ) : (
+                <PdfUploadForm
+                  projectId={projectId}
+                  onDone={() => setGenerateDialogOpen(false)}
+                />
+              )}
             </DialogContent>
           </Dialog>
           <Dialog
@@ -363,15 +415,39 @@ function SkillsSection({
           </Dialog>
         </div>
       </div>
-      <p className="mb-6 text-sm text-zinc-500">
+      <p className="mb-4 text-sm text-zinc-500">
         Modular knowledge chunks the agent can pull in contextually.
       </p>
 
+      {skills.length > 0 && (
+        <div className="relative mb-4">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search skills by name, description, or content..."
+            className={inputClass + " pl-9 pr-8"}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      )}
+
       {!skills.length ? (
         <p className="py-6 text-center text-sm text-zinc-400">No skills yet</p>
+      ) : filtered.length === 0 ? (
+        <p className="py-6 text-center text-sm text-zinc-400">
+          No skills match "{search}"
+        </p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {skills.map((skill) => (
+        <div className="grid max-h-[32rem] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
+          {filtered.map((skill) => (
             <SkillCard
               key={skill.id}
               skill={skill}
@@ -406,35 +482,37 @@ function SkillCard({
   };
 
   return (
-    <div className="flex items-start justify-between rounded-xl border border-white/[0.07] bg-[#18181c] p-4">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-white">
-            {skill.name}
-          </p>
-          {skill.source === "agent" && (
-            <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400">
-              agent
-            </span>
-          )}
+    <div className="group flex flex-col justify-between rounded-xl border border-white/[0.07] bg-[#18181c] p-4 transition-colors hover:border-white/[0.12]">
+      <div className="min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <p className="truncate text-sm font-medium text-white">
+              {skill.name}
+            </p>
+            {skill.source === "agent" && (
+              <span className="shrink-0 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-400">
+                agent
+              </span>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <button onClick={onEdit} className={btnGhost}>
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={handleDelete}
+              className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
         {skill.description && (
-          <p className="mt-1 text-xs text-zinc-500">{skill.description}</p>
+          <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{skill.description}</p>
         )}
-        <p className="mt-2 line-clamp-2 font-mono text-xs text-zinc-400">
+        <p className="mt-2 line-clamp-2 font-mono text-[11px] leading-relaxed text-zinc-400">
           {skill.content}
         </p>
-      </div>
-      <div className="ml-4 flex items-center gap-1">
-        <button onClick={onEdit} className={btnGhost}>
-          <Pencil className="h-4 w-4" />
-        </button>
-        <button
-          onClick={handleDelete}
-          className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-500/10 hover:text-red-500"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
       </div>
     </div>
   );
@@ -535,6 +613,201 @@ function SkillForm({
         className={btnPrimary}
       >
         {saving ? "Saving..." : skill ? "Update Skill" : "Create Skill"}
+      </button>
+    </form>
+  );
+}
+
+type FileStatus = "pending" | "uploading" | "uploaded" | "error";
+
+function PdfUploadForm({
+  projectId,
+  onDone,
+}: {
+  projectId: string;
+  onDone: () => void;
+}) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [fileStatuses, setFileStatuses] = useState<Record<string, FileStatus>>({});
+  const [globalStatus, setGlobalStatus] = useState<"idle" | "analyzing">("idle");
+  const { toast } = useToast();
+
+  const isProcessing = globalStatus === "analyzing" || Object.values(fileStatuses).some((s) => s === "uploading");
+
+  const addFiles = (incoming: FileList | null) => {
+    if (!incoming) return;
+    const pdfs = Array.from(incoming).filter((f) => f.type === "application/pdf");
+    setFiles((prev) => {
+      const existing = new Set(prev.map((f) => f.name));
+      return [...prev, ...pdfs.filter((f) => !existing.has(f.name))];
+    });
+  };
+
+  const removeFile = (name: string) => {
+    setFiles((prev) => prev.filter((f) => f.name !== name));
+    setFileStatuses((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  };
+
+  const setFileStatus = (name: string, status: FileStatus) =>
+    setFileStatuses((prev) => ({ ...prev, [name]: status }));
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (files.length === 0) return;
+
+    // Reset statuses
+    setFileStatuses(Object.fromEntries(files.map((f) => [f.name, "pending"])));
+
+    try {
+      // Step 1: get presigned URLs for all files in parallel
+      const uploadMeta = await Promise.all(
+        files.map((f) => getTempPdfUploadUrl({ fileName: f.name })),
+      );
+
+      // Step 2: upload all PDFs to S3 in parallel, tracking per-file status
+      await Promise.all(
+        files.map(async (file, i) => {
+          setFileStatus(file.name, "uploading");
+          const { s3UploadUrl, s3UploadFields } = uploadMeta[i];
+          const formData = new FormData();
+          Object.entries(s3UploadFields).forEach(([k, v]) =>
+            formData.append(k, v as string),
+          );
+          formData.append("file", file);
+          const res = await fetch(s3UploadUrl, { method: "POST", body: formData });
+          if (!res.ok) {
+            setFileStatus(file.name, "error");
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+          setFileStatus(file.name, "uploaded");
+        }),
+      );
+
+      // Step 3: extract text + generate/enhance skills
+      setGlobalStatus("analyzing");
+      const s3Keys = uploadMeta.map((m) => m.s3Key);
+      const skills = await generateSkillsFromPdf({ projectId, s3Keys });
+
+      toast({
+        title: `${skills.length} skill${skills.length === 1 ? "" : "s"} generated or enhanced`,
+      });
+      onDone();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setGlobalStatus("idle");
+    }
+  };
+
+  const fileStatusIcon = (name: string) => {
+    const s = fileStatuses[name];
+    if (s === "uploading") return <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-orange-400" />;
+    if (s === "uploaded") return <span className="shrink-0 text-xs text-green-400">✓</span>;
+    if (s === "error") return <span className="shrink-0 text-xs text-red-400">✗</span>;
+    return null;
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex max-h-[70vh] flex-col gap-5 overflow-y-auto pt-4">
+      <p className="text-sm text-zinc-500">
+        Select one or more PDF documents to analyze. Any skills that overlap
+        with existing ones will be automatically enriched rather than replaced.
+      </p>
+      <div>
+        <label htmlFor="pdf-file" className={labelClass}>
+          PDF Documents
+        </label>
+        <div
+          className={
+            "flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-white/[0.12] bg-[#18181c] transition-colors " +
+            (files.length > 0 ? "border-orange-500/40 p-4" : "p-8 hover:border-white/20")
+          }
+        >
+          {files.length === 0 ? (
+            <>
+              <FileUp className="h-8 w-8 text-zinc-500" />
+              <p className="text-sm text-zinc-400">
+                Drag & drop or{" "}
+                <label
+                  htmlFor="pdf-file"
+                  className="cursor-pointer text-orange-400 underline"
+                >
+                  browse
+                </label>
+              </p>
+              <p className="text-xs text-zinc-600">PDF files up to 5 MB each</p>
+            </>
+          ) : (
+            <ul className="w-full max-h-48 space-y-2 overflow-y-auto pr-1">
+              {files.map((f) => (
+                <li
+                  key={f.name}
+                  className="flex min-w-0 items-center gap-2 rounded-lg bg-white/5 px-3 py-2"
+                >
+                  {fileStatusIcon(f.name)}
+                  <span className="min-w-0 flex-1 truncate text-sm text-white">{f.name}</span>
+                  <span className="shrink-0 text-xs text-zinc-500">
+                    {(f.size / 1024 / 1024).toFixed(2)} MB
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(f.name)}
+                    disabled={isProcessing}
+                    className="shrink-0 text-xs text-zinc-400 underline hover:text-white disabled:opacity-40"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+              <li className="pt-1">
+                <label
+                  htmlFor="pdf-file"
+                  className="cursor-pointer text-xs text-orange-400 underline"
+                >
+                  + Add more
+                </label>
+              </li>
+            </ul>
+          )}
+          <input
+            id="pdf-file"
+            type="file"
+            accept="application/pdf"
+            multiple
+            className="hidden"
+            onChange={(e) => addFiles(e.target.files)}
+            disabled={isProcessing}
+          />
+        </div>
+      </div>
+
+      {globalStatus === "analyzing" && (
+        <p className="text-center text-xs text-zinc-400">
+          <Loader2 className="mr-1 inline h-3 w-3 animate-spin" />
+          Extracting content and generating skills...
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={isProcessing || files.length === 0}
+        className={btnPrimary}
+      >
+        {isProcessing ? (
+          <span className="inline-flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {globalStatus === "analyzing" ? "Generating skills..." : "Uploading..."}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            Generate Skills
+          </span>
+        )}
       </button>
     </form>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { useStore } from '../context/StoreContext';
 import type { Product, ProductVariant } from '../types';
 

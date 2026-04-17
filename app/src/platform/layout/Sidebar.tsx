@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router";
 import { useAuth, logout } from "wasp/client/auth";
 import { routes } from "wasp/client/router";
 import { FolderKanban, Key, BarChart3, BookOpen, LogOut, Settings, Shield, X } from "lucide-react";
