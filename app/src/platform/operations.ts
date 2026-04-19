@@ -636,36 +636,63 @@ export const generateSkillsFromPdf: GenerateSkillsFromPdf<
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
   const MAX_CHARS = 100_000;
 
+  const skillsTool: OpenAI.ChatCompletionTool = {
+    type: "function",
+    function: {
+      name: "save_skills",
+      description: "Save the extracted skills",
+      parameters: {
+        type: "object",
+        properties: {
+          skills: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "Short descriptive name, e.g. 'Returns Policy'" },
+                description: { type: "string", description: "One sentence summarizing what this skill covers" },
+                content: { type: "string", description: "Dense single paragraph. All steps, fields, values compressed. No line breaks or markdown." },
+              },
+              required: ["name", "description", "content"],
+            },
+          },
+        },
+        required: ["skills"],
+      },
+    },
+  };
+
   const generateSkillsForText = async (text: string) => {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.3,
-      response_format: { type: "json_object" },
+      tools: [skillsTool],
+      tool_choice: { type: "function", function: { name: "save_skills" } },
       messages: [
         {
           role: "system",
-          content: `You are an expert at analyzing documents and extracting distinct skills for an AI agent.
+          content: `You are an expert at analyzing documents and extracting actionable skills.
 
-Given document content, identify the key knowledge areas and create a set of skills. Each skill should represent a distinct topic or capability the agent needs.
+Given document content, identify key knowledge areas and create 3-10 skills. Each skill should be self-contained and focused on one topic.
 
-Return a JSON object with a "skills" array. Each skill has:
-- "name": short descriptive name (e.g. "Returns Policy", "API Authentication")
-- "description": one sentence explaining when the agent should use this skill
-- "content": the actual instructions and knowledge for this skill, written as clear directives the agent can follow. Include relevant details, steps, and rules from the document.
-
-Aim for 3-10 skills depending on the breadth of the content. Each skill should be self-contained and focused on one topic.`,
+IMPORTANT style rules for the "content" field:
+- Dense paragraph, no line breaks or markdown. Sentences separated by ". ".
+- Use colons for key-value, commas for lists, parentheses for grouping. E.g. "Categories: Procurement (MRF, Requisition, PO), Finance (Invoice, Payment)."
+- Use / for alternatives, > for navigation. E.g. "Menu > Set Up > Cost Centers. Status: Draft/Approved/Rejected."
+- Direct imperatives only. No "the agent should..." or "use this skill when...".
+- Include all field names, menu paths, valid values, and edge cases.`,
         },
         {
           role: "user",
-          content: `Analyze the following document and generate skills:\n\n${text}`,
+          content: `Analyze the following document and extract skills:\n\n${text}`,
         },
       ],
     });
 
-    const raw = completion.choices[0]?.message?.content;
-    if (!raw) return [];
+    const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+    if (!toolCall) return [];
     try {
-      const p = JSON.parse(raw);
+      const p = JSON.parse(toolCall.function.arguments);
       return Array.isArray(p.skills) ? p.skills : [];
     } catch {
       return [];
@@ -678,29 +705,23 @@ Aim for 3-10 skills depending on the breadth of the content. Each skill should b
   try {
     const results = await Promise.allSettled(
       s3Keys.map(async (s3Key) => {
-        console.log(`[generateSkillsFromPdf] processing s3Key=${s3Key}`);
         const signedUrl = await getDownloadFileSignedURLFromS3({ s3Key });
-        console.log(`[generateSkillsFromPdf] got signed URL, starting OCR`);
         const ocr = await mistral.ocr.process({
           model: "mistral-ocr-latest",
           document: { type: "document_url", documentUrl: signedUrl },
           includeImageBase64: false,
         });
         const pages = ocr.pages ?? [];
-        console.log(`[generateSkillsFromPdf] OCR done, ${pages.length} pages`);
         if (pages.length === 0) return [];
         let text = pages.map((p: { markdown: string }) => p.markdown).join("\n\n");
-        console.log(`[generateSkillsFromPdf] extracted ${text.length} chars, generating skills`);
         if (text.length > MAX_CHARS) text = text.slice(0, MAX_CHARS);
         return generateSkillsForText(text);
       }),
     );
 
-    for (const [i, result] of results.entries()) {
+    for (const result of results) {
       if (result.status === "fulfilled") {
         allSkills.push(...result.value);
-      } else {
-        console.error(`[generateSkillsFromPdf] s3Key=${s3Keys[i]} failed:`, result.reason);
       }
     }
   } finally {
@@ -713,35 +734,27 @@ Aim for 3-10 skills depending on the breadth of the content. Each skill should b
     throw new HttpError(422, "No skills could be extracted from the uploaded PDFs");
   }
 
-  // Semantically deduplicate and merge skills across all files
+  // Semantically deduplicate and merge skills across files (only when multiple files)
   let deduplicatedSkills = allSkills;
-  if (allSkills.length > 1) {
+  if (s3Keys.length > 1 && allSkills.length > 1) {
     const skillsJson = JSON.stringify(allSkills, null, 2);
     const dedupeCompletion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.2,
-      response_format: { type: "json_object" },
+      tools: [skillsTool],
+      tool_choice: { type: "function", function: { name: "save_skills" } },
       messages: [
         {
           role: "system",
           content: `You are an expert at organizing knowledge for an AI agent.
 
-You will receive a list of skills extracted from multiple documents. Your job is to identify and merge only near-duplicate skills — ones that are essentially the same process or policy under a slightly different name.
+You will receive skills extracted from multiple documents. Merge only near-duplicate skills — ones that are essentially the same process or policy under a slightly different name.
 
-Merging rules (strict):
-- Only merge skills that are near-identical in scope (e.g. "Returns Policy" and "Return Process" cover the exact same thing).
-- Do NOT merge skills that are merely related or belong to the same domain (e.g. "Payment Methods" and "Checkout Process" must stay separate).
-- When in doubt, keep skills separate.
-
-When merging:
-- Workflow steps are the most important part — preserve every step from every version, in full detail. Never summarize, shorten, or drop a step.
-- Combine any additional rules, conditions, or notes from all merged versions.
-- Choose the most descriptive name.
-
-Return a JSON object with a "skills" array. Each skill has:
-- "name": short descriptive name
-- "description": one sentence explaining when the agent should use this skill
-- "content": the full instructions including all workflow steps, written as clear directives`,
+Merging rules:
+- Only merge skills near-identical in scope (e.g. "Returns Policy" and "Return Process").
+- Do NOT merge skills that are merely related (e.g. "Payment Methods" and "Checkout Process" stay separate).
+- When in doubt, keep separate.
+- When merging: preserve every workflow step from every version in full detail. Never summarize or drop steps.`,
         },
         {
           role: "user",
@@ -750,10 +763,10 @@ Return a JSON object with a "skills" array. Each skill has:
       ],
     });
 
-    const dedupeRaw = dedupeCompletion.choices[0]?.message?.content;
-    if (dedupeRaw) {
+    const toolCall = dedupeCompletion.choices[0]?.message?.tool_calls?.[0];
+    if (toolCall) {
       try {
-        const p = JSON.parse(dedupeRaw);
+        const p = JSON.parse(toolCall.function.arguments);
         if (Array.isArray(p.skills) && p.skills.length > 0) {
           deduplicatedSkills = p.skills;
         }
@@ -761,43 +774,83 @@ Return a JSON object with a "skills" array. Each skill has:
     }
   }
 
-  // Build a lookup map of existing skills by lowercase name for matching
-  const existingByName = new Map(
-    existingSkills.map((s) => [s.name.toLowerCase(), s]),
-  );
-
-  const upserted: Prompt[] = [];
-  for (const skill of deduplicatedSkills) {
-    const existing = existingByName.get(skill.name.toLowerCase());
-    const embedding = await embedSkillText(skill.name, skill.description, skill.content);
-    if (existing) {
-      // Enhance existing skill
-      const updated = await context.entities.Prompt.update({
-        where: { id: existing.id },
-        data: {
-          description: skill.description,
-          content: skill.content,
-          updatedBy: "user",
-          ...(embedding && { embedding }),
-        },
-      });
-      upserted.push(updated);
-    } else {
-      // Create new skill
-      const created = await context.entities.Prompt.create({
-        data: {
-          name: skill.name,
-          description: skill.description,
-          content: skill.content,
-          type: "skill",
-          source: "user",
-          ...(embedding && { embedding }),
-          project: { connect: { id: projectId } },
-        },
-      });
-      upserted.push(created);
+  // Embed existing skills for semantic matching
+  const existingEmbeddings: { skill: typeof existingSkills[number]; embedding: number[] }[] = [];
+  if (existingSkills.length > 0) {
+    const texts = existingSkills.map((s) =>
+      [s.name, s.description || "", s.content || ""].filter(Boolean).join("\n"),
+    );
+    const embRes = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: texts,
+    });
+    for (let i = 0; i < existingSkills.length; i++) {
+      existingEmbeddings.push({ skill: existingSkills[i], embedding: embRes.data[i].embedding });
     }
   }
+
+  // Embed all new skills in one batch
+  const newTexts = deduplicatedSkills.map((s: { name: string; description: string; content: string }) =>
+    [s.name, s.description, s.content].filter(Boolean).join("\n"),
+  );
+  const newEmbRes = await openai.embeddings.create({
+    model: "text-embedding-3-small",
+    input: newTexts,
+  });
+
+  const SIMILARITY_THRESHOLD = 0.85;
+
+  const cosine = (a: number[], b: number[]) => {
+    let dot = 0, na = 0, nb = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      na += a[i] * a[i];
+      nb += b[i] * b[i];
+    }
+    return dot / (Math.sqrt(na) * Math.sqrt(nb));
+  };
+
+  // Upsert skills in parallel
+  const upserted = await Promise.all(
+    deduplicatedSkills.map(async (skill: { name: string; description: string; content: string }, i: number) => {
+      const embedding = newEmbRes.data[i].embedding;
+
+      // Find best matching existing skill by embedding similarity
+      let bestMatch: typeof existingSkills[number] | null = null;
+      let bestScore = 0;
+      for (const { skill: existing, embedding: existingEmb } of existingEmbeddings) {
+        const score = cosine(embedding, existingEmb);
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = existing;
+        }
+      }
+
+      if (bestMatch && bestScore >= SIMILARITY_THRESHOLD) {
+        return context.entities.Prompt.update({
+          where: { id: bestMatch.id },
+          data: {
+            description: skill.description,
+            content: skill.content,
+            updatedBy: "user",
+            embedding,
+          },
+        });
+      } else {
+        return context.entities.Prompt.create({
+          data: {
+            name: skill.name,
+            description: skill.description,
+            content: skill.content,
+            type: "skill",
+            source: "user",
+            embedding,
+            project: { connect: { id: projectId } },
+          },
+        });
+      }
+    }),
+  );
 
   return upserted;
 };
