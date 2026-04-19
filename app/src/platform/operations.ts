@@ -678,23 +678,29 @@ Aim for 3-10 skills depending on the breadth of the content. Each skill should b
   try {
     const results = await Promise.allSettled(
       s3Keys.map(async (s3Key) => {
+        console.log(`[generateSkillsFromPdf] processing s3Key=${s3Key}`);
         const signedUrl = await getDownloadFileSignedURLFromS3({ s3Key });
+        console.log(`[generateSkillsFromPdf] got signed URL, starting OCR`);
         const ocr = await mistral.ocr.process({
           model: "mistral-ocr-latest",
           document: { type: "document_url", documentUrl: signedUrl },
           includeImageBase64: false,
         });
         const pages = ocr.pages ?? [];
+        console.log(`[generateSkillsFromPdf] OCR done, ${pages.length} pages`);
         if (pages.length === 0) return [];
         let text = pages.map((p: { markdown: string }) => p.markdown).join("\n\n");
+        console.log(`[generateSkillsFromPdf] extracted ${text.length} chars, generating skills`);
         if (text.length > MAX_CHARS) text = text.slice(0, MAX_CHARS);
         return generateSkillsForText(text);
       }),
     );
 
-    for (const result of results) {
+    for (const [i, result] of results.entries()) {
       if (result.status === "fulfilled") {
         allSkills.push(...result.value);
+      } else {
+        console.error(`[generateSkillsFromPdf] s3Key=${s3Keys[i]} failed:`, result.reason);
       }
     }
   } finally {
