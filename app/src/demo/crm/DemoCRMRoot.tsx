@@ -93,7 +93,9 @@ export function DemoCRMRoot({ children }: DemoCRMRootProps) {
       }}
     >
       <CRMProvider>
-        {children}
+        <div className="text-gray-900" style={{ colorScheme: 'light' }}>
+          {children}
+        </div>
       </CRMProvider>
     </OramaProvider>
 

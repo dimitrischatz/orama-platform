@@ -85,7 +85,9 @@ export function DemoStoreRoot({ children }: DemoStoreRootProps) {
       }}
     >
       <StoreProvider>
-        {children}
+        <div className="text-gray-900" style={{ colorScheme: 'light' }}>
+          {children}
+        </div>
       </StoreProvider>
     </OramaProvider>
   );

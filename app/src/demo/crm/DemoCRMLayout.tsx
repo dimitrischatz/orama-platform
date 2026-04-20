@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useCRM } from './context/CRMContext';
+import { WelcomeModal } from '../WelcomeModal';
 
 interface NavItem {
   name: string;
@@ -169,6 +170,15 @@ interface DemoCRMLayoutProps {
 export function DemoCRMLayout({ children }: DemoCRMLayoutProps) {
   return (
     <div className="flex h-screen bg-gray-50">
+      <WelcomeModal
+        demoName="Sales CRM"
+        intro="This is a sales CRM with 12 companies, 17 contacts, a deal pipeline, and pending activities."
+        ideas={[
+          '"Create a deal for Tidewater Insurance, $50k, proposal stage"',
+          '"Mark all my pending activities as complete"',
+          '"Add a contact named Sarah Lee at BrightPath Education"',
+        ]}
+      />
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 lg:p-8">{children}</div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useStore } from './context/StoreContext';
 import { SetupWizard } from './components/SetupWizard';
+import { WelcomeModal } from '../WelcomeModal';
 
 interface NavItem {
   name: string;
@@ -167,6 +168,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-gray-50">
+      <WelcomeModal
+        demoName="Store Admin"
+        intro="This is a Shopify-style back office with 13 products, 8 orders, and inventory tracking."
+        ideas={[
+          '"Ship order #1005 with tracking number TRK-443291"',
+          '"Add a new product: Merino Wool Beanie, $44.99, category Accessories"',
+          '"Process a return on order #1001 — wrong size"',
+        ]}
+      />
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <div className="p-4 lg:p-8">{children}</div>
