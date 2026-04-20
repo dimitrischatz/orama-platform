@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router';
 import { useStore } from './context/StoreContext';
 import { SetupWizard } from './components/SetupWizard';
 import { WelcomeModal } from '../WelcomeModal';
+import oramaLogo from '../../client/static/orama-logo.svg';
 
 interface NavItem {
   name: string;
@@ -167,7 +168,15 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <>
+    <div className="flex lg:hidden h-screen items-center justify-center bg-background p-8 text-center">
+      <div className="max-w-xs">
+        <img src={oramaLogo} alt="Orama" className="mx-auto mb-4 h-10 w-10" />
+        <p className="text-base font-semibold text-white mb-2">Hop on a desktop to try this</p>
+        <p className="text-sm text-zinc-500 leading-relaxed">Orama works by navigating your app in real time — you'll want a bigger screen to see it in action.</p>
+      </div>
+    </div>
+    <div className="hidden lg:flex h-screen bg-gray-50">
       <WelcomeModal
         demoName="Store Admin"
         intro="This is a Shopify-style back office with 13 products, 8 orders, and inventory tracking."
@@ -182,6 +191,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         <div className="p-4 lg:p-8">{children}</div>
       </main>
     </div>
+    </>
   );
 }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import oramaLogo from '../client/static/orama-logo.svg';
 
 interface WelcomeModalProps {
   demoName: string;
@@ -22,9 +23,7 @@ export function WelcomeModal({ demoName, intro, ideas }: WelcomeModalProps) {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10">
-          <span className="text-lg font-bold text-orange-500">O</span>
-        </div>
+        <img src={oramaLogo} alt="Orama" className="mb-4 h-8 w-8" />
 
         <h2 className="mb-1 text-lg font-bold text-gray-900">
           Welcome to the {demoName}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useCRM } from './context/CRMContext';
 import { WelcomeModal } from '../WelcomeModal';
+import oramaLogo from '../../client/static/orama-logo.svg';
 
 interface NavItem {
   name: string;
@@ -169,7 +170,16 @@ interface DemoCRMLayoutProps {
 
 export function DemoCRMLayout({ children }: DemoCRMLayoutProps) {
   return (
-    <div className="flex h-screen bg-gray-50">
+    <>
+    {/* Mobile blocker */}
+    <div className="flex lg:hidden h-screen items-center justify-center bg-background p-8 text-center">
+      <div className="max-w-xs">
+        <img src={oramaLogo} alt="Orama" className="mx-auto mb-4 h-10 w-10" />
+        <p className="text-base font-semibold text-white mb-2">Hop on a desktop to try this</p>
+        <p className="text-sm text-zinc-500 leading-relaxed">Orama works by navigating your app in real time — you'll want a bigger screen to see it in action.</p>
+      </div>
+    </div>
+    <div className="hidden lg:flex h-screen bg-gray-50">
       <WelcomeModal
         demoName="Sales CRM"
         intro="This is a sales CRM with 12 companies, 17 contacts, a deal pipeline, and pending activities."
@@ -184,5 +194,6 @@ export function DemoCRMLayout({ children }: DemoCRMLayoutProps) {
         <div className="p-4 lg:p-8">{children}</div>
       </main>
     </div>
+    </>
   );
 }
