@@ -444,7 +444,7 @@ export const generateSkillsFromDocs: GenerateSkillsFromDocs<
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
   const completion = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "gpt-5.4-mini",
     temperature: 0.3,
     response_format: { type: "json_object" },
     messages: [
@@ -664,7 +664,7 @@ export const generateSkillsFromPdf: GenerateSkillsFromPdf<
 
   const generateSkillsForText = async (text: string) => {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5.4-mini",
       temperature: 0.3,
       tools: [skillsTool],
       tool_choice: { type: "function", function: { name: "save_skills" } },
@@ -739,7 +739,7 @@ IMPORTANT style rules for the "content" field:
   if (s3Keys.length > 1 && allSkills.length > 1) {
     const skillsJson = JSON.stringify(allSkills, null, 2);
     const dedupeCompletion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5.4-mini",
       temperature: 0.2,
       tools: [skillsTool],
       tool_choice: { type: "function", function: { name: "save_skills" } },
